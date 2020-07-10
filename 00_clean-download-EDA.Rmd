@@ -1,0 +1,133 @@
+---
+title: "abundance"
+author: "Anna Spiers"
+date: "7/9/2020"
+output: html_document
+---
+
+1) Download NEON's carabid pitfall trap data product  
+2) EDA  
+3) Clean data and save locally
+
+```{r, message=F}
+library(neonUtilities)
+library(ggplot2)
+library(dplyr)
+library(stringr) #word()
+library(lubridate)
+```
+
+#### Download
+
+Normally, I'd use the `loadByProduct` function, but this downloaded only a partial dataset (20 MB). I've commented this code out. Alternatively, older functions to download data are `zipsByProduct` then `stackByTable`, however using `zipsByProduct` yields a download of only 21 MB. Instead, I downloaded straight from the data portal to get the full dataset (76 MB) as a zip file and used the `stackByTable` function to read in the data.
+```{r, message=F}
+# # Download carabid pitfall trap survey data 
+# if (!file.exists("data/carabid_raw.rds")) {
+#     carabid_raw <- loadByProduct(dpID = "DP1.10022.001", check.size = T) #20 MB
+#     saveRDS(carabid_raw, "data/carabid_raw.rds")
+# }
+
+
+# Try older NEON functions
+#zipsByProduct(dpID = "DP1.10022.001", check.size = T) #downloads only 21MB
+#
+if (!file.exists("data/carabid_raw.rds")) {
+    carabid_raw <- stackByTable("data/NEON_count-beetles.zip", savepath = 'envt',  nCores = 2)
+    saveRDS(carabid_raw, "data/carabid_raw.rds")
+} else {
+    carabid_raw <- readRDS("data/carabid_raw.rds")
+}
+list2env(carabid_raw, .GlobalEnv)
+rm(carabid_raw)
+```
+
+
+#### EDA
+
+Proportion of traps that are missing out of total possible. sampleCollected=N means sample/trap was not collected on a given collection bout. 
+```{r}
+bet_fielddata %>%
+    ggplot() +
+    geom_bar(aes(x=siteID, fill=sampleCollected), position = "fill") +
+    theme(axis.text.x = element_text(angle = 90))
+```
+There are a substantial number of traps missing from most sites. This supports our choice to standardize abundance by trap-night.
+
+Years of data available by site
+```{r}
+bet_fielddata %>%
+    mutate(year = year(setDate)) %>%
+    group_by(siteID, year) %>%
+    summarize(first_set = range(setDate, na.rm=T)[1],
+              last_collect = range(setDate, na.rm=T)[2]) %>%
+    ggplot() +
+    geom_linerange(aes(x=siteID, ymin=first_set, ymax=last_collect)) +
+    coord_flip()
+#x-axis is year, y-axis is site
+```
+
+
+
+Abundance at each site through time
+```{r}
+bet_parataxonomistID %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID) %>%
+    left_join(bet_sorting %>%
+                  filter(sampleType == "carabid") %>%
+                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
+                         subsampleID, remarks)) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           col_DOY = day(collectDate),
+           year = as.character(year(collectDate)))  %>%
+    group_by(siteID, year, col_DOY) %>%
+    summarize(n=n()) %>%
+    ggplot() + 
+        geom_line(aes(x=col_DOY, y=n, col=year)) +
+    facet_wrap(~siteID)
+```
+`bet_parataxonomist` and `bet_sorting` have NA's in `trapID` variable. This may be important in understanding how many traps were collected in each bout at a site. Why are there blank `sampleID` values when a `subsampleID` value exists.
+
+
+#### Clean
+
+Create a dataframe where every row is an individual beetle that has been collected by NEON.
+```{r, message=F}
+carabid_abund <-   bet_parataxonomistID %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID) %>%
+    left_join(bet_sorting %>%
+                  filter(sampleType == "carabid") %>%
+                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
+                         subsampleID, remarks)) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           col_DOY = day(collectDate),
+           year = as.character(year(collectDate))) 
+
+carabid_rich <-   bet_parataxonomistID %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID,
+           taxonID, taxonRank, scientificName, morphospeciesID) %>%
+    left_join(bet_sorting %>%
+                  filter(sampleType == "carabid") %>%
+                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
+                         subsampleID, remarks)) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           col_DOY = day(collectDate),
+           year = as.character(year(collectDate)),
+           # Merge parataxonomist species and morphospecies columns
+           para_morph = ifelse(is.na(morphospeciesID), 
+                               scientificName, 
+                               paste0(scientificName,"/", morphospeciesID,sep=""))) %>%
+    #Group data by site by collectDate by para_morph
+    group_by(siteID, collectDate, para_morph) %>%
+    summarize(n=n()) %>%
+    #Group again to count the number of species or morphospecies at each site at each collection bout
+    group_by(siteID, collectDate) %>%
+    summarize(n=n())
+
+
+saveRDS(carabid_abund, "data/carabid_abund_clean.rds")
+saveRDS(carabid_rich, "data/carabid_rich_clean.rds")
+```
+

@@ -1,0 +1,98 @@
+---
+title: "abundance"
+author: "Anna Spiers"
+date: "7/9/2020"
+output: html_document
+---
+
+A workflow for creating dummy forecasts for NEON carabid species richness  
+1) EDA
+2) Average baseline dummy forecast  
+3) Random walk dummy forecast 
+
+```{r, message=F}
+library(neonUtilities)
+library(ggplot2)
+library(dplyr)
+library(stringr) #word()
+library(lubridate)
+```
+
+#### Load data
+
+```{r}
+carabid_rich <- readRDS("data/carabid_rich_clean.rds")
+```
+
+#### EDA
+
+
+
+####Average baseline dummy forecast  
+
+
+
+#### Random walk dummy forecast 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# What is the parataxonomist's taxonomic resolution like?  ----------------
+str(bet_parataxonomistID) #see taxonrank and morphospeciesID
+str(bet_sorting)
+
+# Distribution of taxon ranks
+bet_parataxonomistID %>%
+    group_by(taxonRank) %>%
+    summarize(n=n(), percent=n()/nrow(bet_parataxonomistID)) %>%
+    arrange(-n)
+
+# Convert subspecies to species by chopping off 3rd name
+para_cara <- bet_parataxonomistID %>%
+    mutate(para_sciname = ifelse(taxonRank=="subspecies", paste(word(scientificName, 1:2),collapse=" "),scientificName)) %>%
+    select(uid,domainID,siteID,plotID,trapID,collectDate,subsampleID,individualID,taxonID,scientificName,taxonRank,identifiedBy,para_sciname)
+#save(para_cara, file="data_derived/all_sites_paratax.Rdata")
+
+
+# 2) Explore just the parataxonomist data ----------------------------------
+
+load("data_derived/all_sites_paratax.Rdata") 
+# For simplicity, we will look at parataxonomist identification, not expert or morphospecies IDs
+
+# Histogram of parataxonomist identifications
+ggplot(para_cara, aes(x=para_sciname)) +
+    geom_histogram(stat="count")
+para_cara %>%
+    group_by(para_sciname) %>%
+    summarize(n=n()) %>%
+    arrange(-n) %>%
+    data.frame()
+
+# Remove 
+
+# What species/genus are most widespread across sites?
+para_cara %>%
+    group_by(para_sc)
+
+# Time series of total abundance across NEON sites and domains
+# Anything interesting here?
+
+# Summarize species/genus richness across sites and domains. 
+
+
+

@@ -1,0 +1,53 @@
+---
+title: "abundance"
+author: "Anna Spiers"
+date: "7/9/2020"
+output: html_document
+---
+
+A workflow for creating dummy forecasts for NEON carabid abundance.  
+1) EDA   
+2) Average baseline dummy forecast  
+3) Random walk dummy forecast 
+
+```{r, message=F}
+library(neonUtilities)
+library(ggplot2)
+library(dplyr)
+library(stringr) #word()
+library(lubridate)
+```
+
+#### Load data
+
+```{r}
+readRDS("data/carabid_abund_clean.rds")
+```
+
+#### EDA
+
+Abundance at each site through time
+```{r}
+bet_parataxonomistID %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID) %>%
+    left_join(bet_sorting %>%
+                  filter(sampleType == "carabid") %>%
+                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
+                         subsampleID, remarks)) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           col_DOY = day(collectDate),
+           year = as.character(year(collectDate)))  %>%
+    group_by(siteID, year, col_DOY) %>%
+    summarize(n=n()) %>%
+    ggplot() + 
+        geom_line(aes(x=col_DOY, y=n, col=year)) +
+    facet_wrap(~siteID)
+```
+
+####Average baseline dummy forecast  
+
+
+
+#### Random walk dummy forecast 
+
