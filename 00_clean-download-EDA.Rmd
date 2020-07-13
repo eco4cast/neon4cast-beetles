@@ -10,6 +10,7 @@ output: html_document
 3) Clean data and save locally
 
 ```{r, message=F}
+library(devtools) #install_github()
 library(neonUtilities)
 library(ggplot2)
 library(dplyr)
@@ -19,23 +20,13 @@ library(lubridate)
 
 #### Download
 
-Normally, I'd use the `loadByProduct` function, but this downloaded only a partial dataset (20 MB). I've commented this code out. Alternatively, older functions to download data are `zipsByProduct` then `stackByTable`, however using `zipsByProduct` yields a download of only 21 MB. Instead, I downloaded straight from the data portal to get the full dataset (76 MB) as a zip file and used the `stackByTable` function to read in the data.
+At first, the `neonUtilities::loadByProduct` function downloaded only a partial dataset (20 MB). Then, I updated `neonUtilities` and the error described in this [bug report](https://github.com/NEONScience/NEON-utilities/issues/94) occurred. The resolution to that bug is to download the latest `neonUtilities` version from github. Then restart R. Now, all 67.4 MB of data is downloaded using the `neonUtilities::loadByProduct` function. 
 ```{r, message=F}
+install_github("NEONScience/NEON-utilities/neonUtilities")
 # # Download carabid pitfall trap survey data 
-# if (!file.exists("data/carabid_raw.rds")) {
-#     carabid_raw <- loadByProduct(dpID = "DP1.10022.001", check.size = T) #20 MB
-#     saveRDS(carabid_raw, "data/carabid_raw.rds")
-# }
-
-
-# Try older NEON functions
-#zipsByProduct(dpID = "DP1.10022.001", check.size = T) #downloads only 21MB
-#
 if (!file.exists("data/carabid_raw.rds")) {
-    carabid_raw <- stackByTable("data/NEON_count-beetles.zip", savepath = 'envt',  nCores = 2)
+    carabid_raw <- loadByProduct(dpID = "DP1.10022.001", check.size = T) #67.4 MB
     saveRDS(carabid_raw, "data/carabid_raw.rds")
-} else {
-    carabid_raw <- readRDS("data/carabid_raw.rds")
 }
 list2env(carabid_raw, .GlobalEnv)
 rm(carabid_raw)
