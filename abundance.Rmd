@@ -21,27 +21,52 @@ library(lubridate)
 #### Load data
 
 ```{r}
-readRDS("data/carabid_abund_clean.rds")
+# dataframe with comprehensive information - more than is needed for forecasting abundance
+carabid_clean <- readRDS("data/carabid_clean.rds") 
+# Each row has a unique subsampleID. the individualCount column reports the raw count 
+# of individuals for a subsample (taxon per trap per collectDate)
+
+# dataframe with information related to forecasting abundance only
+carabid_count <- carabid_clean %>%
+    select(siteID, sampleID, collectDate, col_DOY, col_month, col_year, individualCount, trapnights) %>%
+    group_by(siteID, collectDate, trapnights) %>%
+    summarize(totalCount = sum(individualCount))
 ```
 
 #### EDA
 
-Abundance at each site through time
+See [Carl's script](https://github.com/boettiger-lab/neon-forecast/blob/master/abundance/beetles.Rmd) exploring abundance, particularly raw count vs abundance, for more information.
+
+Count at each site across collection bouts
 ```{r}
-bet_parataxonomistID %>%
-    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID) %>%
-    left_join(bet_sorting %>%
-                  filter(sampleType == "carabid") %>%
-                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
-                         subsampleID, remarks)) %>%
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, 
+           individualCount, sampleID, subsampleID) %>%
     mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
            trapnight = as.numeric(collectDate - setDate, units="days"),
-           col_DOY = day(collectDate),
-           year = as.character(year(collectDate)))  %>%
+           col_DOY = yday(collectDate),
+           year = as.character(year(collectDate))) %>%
     group_by(siteID, year, col_DOY) %>%
-    summarize(n=n()) %>%
+    summarize(n=sum(individualCount)) %>%
     ggplot() + 
         geom_line(aes(x=col_DOY, y=n, col=year)) +
+    facet_wrap(~siteID)
+```
+
+Count at each site across years
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, 
+           individualCount, sampleID, subsampleID) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           year = year(collectDate)) %>%
+    group_by(siteID, year) %>%
+    summarize(n=sum(individualCount)) %>%
+    ggplot(aes(x=year, y=n)) + 
+        geom_line() +
     facet_wrap(~siteID)
 ```
 

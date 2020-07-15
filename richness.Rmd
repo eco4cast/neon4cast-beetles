@@ -21,11 +21,22 @@ library(lubridate)
 #### Load data
 
 ```{r}
-carabid_rich <- readRDS("data/carabid_rich_clean.rds")
+# dataframe with comprehensive information - more than is needed for forecasting richness
+carabid_clean <- readRDS("data/carabid_clean.rds") 
+
+# dataframe with information related to forecasting richness only
+carabid_rich <- carabid_clean %>%
+    select(siteID, sampleID, collectDate, col_DOY, col_month, col_year, taxonRank,
+           taxonID, scientificName, morphospeciesID, spec_morph) %>%
+    count(siteID, collectDate) 
+# n is the number of unique scientific names and morphospecies at a site on a collectiondate
 ```
 
 #### EDA
 
+Where are morphospecies assigned? I thought that morphospecies were assigned when the parataxonomist couldn't ID to species, but this may be wrong. May be worth looking at bet_parataxonomist data again, as my hypothesis was the case there, at least.
+
+# Visualize spatial and temporal accumulation curves, and Chao's index
 
 
 ####Average baseline dummy forecast  
@@ -34,65 +45,6 @@ carabid_rich <- readRDS("data/carabid_rich_clean.rds")
 
 #### Random walk dummy forecast 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# What is the parataxonomist's taxonomic resolution like?  ----------------
-str(bet_parataxonomistID) #see taxonrank and morphospeciesID
-str(bet_sorting)
-
-# Distribution of taxon ranks
-bet_parataxonomistID %>%
-    group_by(taxonRank) %>%
-    summarize(n=n(), percent=n()/nrow(bet_parataxonomistID)) %>%
-    arrange(-n)
-
-# Convert subspecies to species by chopping off 3rd name
-para_cara <- bet_parataxonomistID %>%
-    mutate(para_sciname = ifelse(taxonRank=="subspecies", paste(word(scientificName, 1:2),collapse=" "),scientificName)) %>%
-    select(uid,domainID,siteID,plotID,trapID,collectDate,subsampleID,individualID,taxonID,scientificName,taxonRank,identifiedBy,para_sciname)
-#save(para_cara, file="data_derived/all_sites_paratax.Rdata")
-
-
-# 2) Explore just the parataxonomist data ----------------------------------
-
-load("data_derived/all_sites_paratax.Rdata") 
-# For simplicity, we will look at parataxonomist identification, not expert or morphospecies IDs
-
-# Histogram of parataxonomist identifications
-ggplot(para_cara, aes(x=para_sciname)) +
-    geom_histogram(stat="count")
-para_cara %>%
-    group_by(para_sciname) %>%
-    summarize(n=n()) %>%
-    arrange(-n) %>%
-    data.frame()
-
-# Remove 
-
-# What species/genus are most widespread across sites?
-para_cara %>%
-    group_by(para_sc)
-
-# Time series of total abundance across NEON sites and domains
-# Anything interesting here?
-
-# Summarize species/genus richness across sites and domains. 
 
 
 

@@ -1,5 +1,5 @@
 ---
-title: "abundance"
+title: "clean-download-EDA"
 author: "Anna Spiers"
 date: "7/9/2020"
 output: html_document
@@ -10,30 +10,47 @@ output: html_document
 3) Clean data and save locally
 
 ```{r, message=F}
-library(devtools) #install_github()
-library(neonUtilities)
 library(ggplot2)
 library(dplyr)
 library(stringr) #word()
 library(lubridate)
+library(neonUtilities) 
+
+# Check that neonUtilities package is up-to-date
+if (sessionInfo()$otherPkgs$neonUtilities$Version != "1.3.6") {
+    library(devtools) #install_github()
+    install_github("NEONScience/NEON-utilities/neonUtilities")
+    # restart R
+}
+
 ```
 
 #### Download
 
-At first, the `neonUtilities::loadByProduct` function downloaded only a partial dataset (20 MB). Then, I updated `neonUtilities` and the error described in this [bug report](https://github.com/NEONScience/NEON-utilities/issues/94) occurred. The resolution to that bug is to download the latest `neonUtilities` version from github. Then restart R. Now, all 67.4 MB of data is downloaded using the `neonUtilities::loadByProduct` function. 
+At first, the `neonUtilities::loadByProduct` function downloaded only a partial dataset (20 MB). Then, I updated `neonUtilities` via CRAN and the error described in this [bug report](https://github.com/NEONScience/NEON-utilities/issues/94) occurred. The resolution to that bug is to download the latest `neonUtilities` version from github. Then restart R. Now, all 67.4 MB of data is downloaded using the `neonUtilities::loadByProduct` function. 
 ```{r, message=F}
-install_github("NEONScience/NEON-utilities/neonUtilities")
+
 # # Download carabid pitfall trap survey data 
 if (!file.exists("data/carabid_raw.rds")) {
     carabid_raw <- loadByProduct(dpID = "DP1.10022.001", check.size = T) #67.4 MB
     saveRDS(carabid_raw, "data/carabid_raw.rds")
 }
+carabid_raw <- readRDS("data/carabid_raw.rds")
 list2env(carabid_raw, .GlobalEnv)
 rm(carabid_raw)
 ```
 
 
 #### EDA
+
+Look at the data composition
+```{r}
+bet_parataxonomistID %>% count(taxonRank, sort=TRUE) #look into morphospecies too
+bet_parataxonomistID %>% count(siteID, sort=TRUE) # 47 sites
+bet_sorting %>% filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    count(taxonRank, sort=TRUE) #look into morphospecies too
+```
+If all individual beetles collected are in `bet_sorting`, then how can there be more species in in `bet_parataxonomistID`? Is there more refined identification in the pinning process when `bet_parataxonomist` is created?
 
 Proportion of traps that are missing out of total possible. sampleCollected=N means sample/trap was not collected on a given collection bout. 
 ```{r}
@@ -42,7 +59,8 @@ bet_fielddata %>%
     geom_bar(aes(x=siteID, fill=sampleCollected), position = "fill") +
     theme(axis.text.x = element_text(angle = 90))
 ```
-There are a substantial number of traps missing from most sites. This supports our choice to standardize abundance by trap-night.
+Every site is missing traps; some are missing a substantial number. This supports our choice to standardize abundance by trap-night.
+
 
 Years of data available by site
 ```{r}
@@ -58,67 +76,144 @@ bet_fielddata %>%
 ```
 
 
-
-Abundance at each site through time
+Count at each site across collection bouts
 ```{r}
-bet_parataxonomistID %>%
-    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID) %>%
-    left_join(bet_sorting %>%
-                  filter(sampleType == "carabid") %>%
-                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
-                         subsampleID, remarks)) %>%
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, 
+           individualCount, sampleID, subsampleID) %>%
     mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
            trapnight = as.numeric(collectDate - setDate, units="days"),
-           col_DOY = day(collectDate),
-           year = as.character(year(collectDate)))  %>%
+           col_DOY = yday(collectDate),
+           year = as.character(year(collectDate))) %>%
     group_by(siteID, year, col_DOY) %>%
-    summarize(n=n()) %>%
+    summarize(n=sum(individualCount)) %>%
     ggplot() + 
         geom_line(aes(x=col_DOY, y=n, col=year)) +
     facet_wrap(~siteID)
 ```
-`bet_parataxonomist` and `bet_sorting` have NA's in `trapID` variable. This may be important in understanding how many traps were collected in each bout at a site. Why are there blank `sampleID` values when a `subsampleID` value exists.
+`bet_parataxonomist` and `bet_sorting` have NA's in `trapID` variable. This may be important in understanding how many traps were collected in each bout at a site and how many nights the traps were left out for. However, `bet_fielddata` also has trap-level entries - check this out. Why are there blank `sampleID` values when a `subsampleID` value exists.
 
+Count at each site across years
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, 
+           individualCount, sampleID, subsampleID) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           year = year(collectDate)) %>%
+    group_by(siteID, year) %>%
+    summarize(n=sum(individualCount)) %>%
+    ggplot(aes(x=year, y=n)) + 
+        geom_line() +
+    facet_wrap(~siteID)
+```
+
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate,
+                         sampleID, subsampleID, remarks) %>%
+    left_join(bet_fielddata %>%
+                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleCollected, sampleID)) %>%
+    filter(is.na(trapID)) #1185 rows have trapID == NA
+    
+# Join dataframes using bet_fielddata's trapID column, since bet_sorting has NAs in the trapID column
+bet_sorting %>%
+    filter(sampleType == "carabid"| sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, setDate, collectDate,
+                         sampleID, subsampleID, remarks) %>%
+    left_join(bet_fielddata %>%
+                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleCollected, sampleID)) %>%
+    filter(is.na(trapID)) #0 rows
+# That seems to work! Now we know to use trap info from bet_sorting
+
+
+
+```
+
+The NEON beetle user guide says a "record from from bet_sorƟng may have zero (if no contents of the
+subsampleID pinned) or mulƟple child records in bet_parataxonomistID depending on the number of individuals selected for pinning from each subsampleID".  
+Can we find subsamples where the scientific names differ between bet_sorting and bet_parataxonomist?
+```{r}
+# First, look at a singular subsample
+# One row per subsample in bet_sorting
+bet_parataxonomistID %>% count(subsampleID, sort=T) %>% head(5)
+# Take most abundant subsampleID
+bet_sorting %>% filter(subsampleID=="xZ4ZeMJQZ4IAvxkYw5JSL65p8nHS7rDz3HkqrgCiwuY=") %>%
+    select(scientificName)
+bet_parataxonomistID %>% filter(subsampleID=="xZ4ZeMJQZ4IAvxkYw5JSL65p8nHS7rDz3HkqrgCiwuY=") %>%
+    distinct(scientificName)
+bet_sorting %>% count(subsampleID) %>% filter(n>1)
+
+# Now, identify rows in bet_parataxonomistID without a match in bet_sorting
+anti_join(bet_parataxonomistID %>% select(subsampleID, scientificName),
+          bet_sorting %>% filter(sampleType == "carabid"| sampleType == "other carabid") %>%
+              select(subsampleID, scientificName))
+# 3854 rows in bet_parataxonomistID do not match a row in bet_sorting. That's a substantial size. What should we do with this information? That means that from sorting to pinning, parataxonomist species ID's change for 3854 individual beetles
+
+```
+
+```{r}
+bet_sorting %>% 
+  select(collectDate, siteID, domainID, scientificName, individualCount) %>%
+  mutate(month = format(collectDate, "%Y-%m")) %>% 
+  mutate(month = as.Date(paste(month, "01", sep="-"))) %>%
+  group_by(scientificName, month, siteID, domainID) %>%
+  summarize(count = sum(individualCount, na.rm = TRUE)) %>%
+  ungroup()
+
+bet_sorting %>% 
+  select(collectDate, siteID, plotID, domainID, trapID, scientificName, individualCount )%>%
+  mutate(month = format(collectDate, "%Y-%m")) %>% 
+  mutate(month = as.Date(paste(month, "01", sep="-"))) %>%
+  group_by(scientificName, month, siteID, domainID)
+```
+
+According to the NEON beetle user guide, specimen not identified to species are identified to morphospecies. Is this reflected in the data?
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid"| sampleType == "other carabid") %>%
+    count(taxonRank, sort=T) 
+
+# What is a "speciesgroup" taxonRank?
+bet_sorting %>%
+    filter(sampleType == "carabid"| sampleType == "other carabid") %>%
+    filter(taxonRank == "speciesgroup") %>%
+    select(siteID, taxonID, scientificName, morphospeciesID) #same scientificname for all, spans 3 sites
+
+bet_sorting %>%
+    filter(sampleType == "carabid"| sampleType == "other carabid",
+           taxonRank != "species" & taxonRank != "subspecies",
+           is.na(morphospeciesID)) %>%
+    select(taxonRank, scientificName, morphospeciesID) 
+# 2783 records where parataxonomist did not identify to species, but no morphospeciesID is offered. 
+# What do we do with this information?
+```
 
 #### Clean
 
 Create a dataframe where every row is an individual beetle that has been collected by NEON.
 ```{r, message=F}
-carabid_abund <-   bet_parataxonomistID %>%
-    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID) %>%
-    left_join(bet_sorting %>%
-                  filter(sampleType == "carabid") %>%
-                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
-                         subsampleID, remarks)) %>%
-    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
-           trapnight = as.numeric(collectDate - setDate, units="days"),
-           col_DOY = day(collectDate),
-           year = as.character(year(collectDate))) 
-
-carabid_rich <-   bet_parataxonomistID %>%
-    select(domainID, siteID, plotID, trapID, setDate, collectDate, individualID, subsampleID,
-           taxonID, taxonRank, scientificName, morphospeciesID) %>%
-    left_join(bet_sorting %>%
-                  filter(sampleType == "carabid") %>%
-                  select(domainID, siteID, plotID, trapID, setDate, collectDate, sampleID, 
-                         subsampleID, remarks)) %>%
-    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
-           trapnight = as.numeric(collectDate - setDate, units="days"),
-           col_DOY = day(collectDate),
-           year = as.character(year(collectDate)),
-           # Merge parataxonomist species and morphospecies columns
-           para_morph = ifelse(is.na(morphospeciesID), 
+carabid_clean <-  bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>% 
+    select(domainID, siteID, plotID, setDate, collectDate, 
+           sampleID, subsampleID, taxonRank, taxonID, scientificName, 
+           morphospeciesID, individualCount, remarks) %>%
+    left_join(bet_fielddata %>%
+                  select(domainID, siteID, plotID, trapID, setDate, 
+                         collectDate, sampleCollected, sampleID)) %>% #use bet_fielddata's trapID since there are no NA's
+    mutate(trapnights = as.numeric(collectDate - setDate, units="days"),
+           col_DOY = yday(collectDate),
+           col_month = month(collectDate),
+           col_year = year(collectDate),
+           spec_morph = ifelse(is.na(morphospeciesID), #merge parataxonomist species and morphospecies columns
                                scientificName, 
-                               paste0(scientificName,"/", morphospeciesID,sep=""))) %>%
-    #Group data by site by collectDate by para_morph
-    group_by(siteID, collectDate, para_morph) %>%
-    summarize(n=n()) %>%
-    #Group again to count the number of species or morphospecies at each site at each collection bout
-    group_by(siteID, collectDate) %>%
-    summarize(n=n())
+                               paste0(scientificName,"/", morphospeciesID,sep="")))
 
-
-saveRDS(carabid_abund, "data/carabid_abund_clean.rds")
-saveRDS(carabid_rich, "data/carabid_rich_clean.rds")
+saveRDS(carabid_clean, "data/carabid_clean.rds")
 ```
 
+### Outstanding data questions
+* Is collectionDate a reliable index for collection bouts?
