@@ -36,7 +36,36 @@ carabid_rich <- carabid_clean %>%
 
 Where are morphospecies assigned? I thought that morphospecies were assigned when the parataxonomist couldn't ID to species, but this may be wrong. May be worth looking at bet_parataxonomist data again, as my hypothesis was the case there, at least.
 
+
+
+
 # Visualize spatial and temporal accumulation curves, and Chao's index
+
+
+
+Plot of time series of richness as function of collect date and siteID
+
+```{r}
+
+pdf('richnessOverTime.pdf')
+par(mar=c(4,4,0.5,0.5))
+with(dplyr::filter(carabid_rich, siteID=='ABBY'), 
+	plot(collectDate, n, ylim=c(0, 215), 
+		xlim=range(carabid_rich$collectDate),
+		xlab='Collection date', ylab='Richness', 
+		type='n')
+)
+
+sites <- unique(carabid_rich$siteID)
+
+for(i in 1:length(sites)){
+	tmp <- dplyr::filter(carabid_rich, siteID==sites[i])
+	tmp <- tmp[order(tmp$collectDate),]
+	lines(tmp$collectDate, tmp$n, col=rainbow(50)[i], lwd=1.25)
+}
+dev.off()
+
+```
 
 
 
@@ -61,7 +90,7 @@ Where are morphospecies assigned? I thought that morphospecies were assigned whe
 
 mnCarabid <- carabid_rich %>%
 	group_by(siteID) %>% 
-	summarise(mnAbund=mean(n))
+	summarise(mnRichness=mean(n))
 
 ```
 
@@ -78,7 +107,7 @@ mnCarabid <- carabid_rich %>%
 
 rwCarabid <- carabid_rich %>%
 	group_by(siteID) %>% 
-	summarise(rwAbund=n[which.max(collectDate)])
+	summarise(rwRichness=n[which.max(collectDate)])
 
 ```
 
