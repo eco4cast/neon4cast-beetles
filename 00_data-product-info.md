@@ -3,7 +3,8 @@
 This is a brain dump with helpful information for understanding NEON's carabid data products, from experimental design to data structure
 
 #### Experimental design   
-* 4 traps per plot, 10 plots per site, at all terrestrial sites    
+* Since 2014 to 2017, 4 traps per plot, 10 plots per site, at all terrestrial sites, summed up to 40 traps per NEON site; eaach trap in a given plot oriented towards the one of the four cardinal directions.
+* 2018 onward, the northward trap was eliminated from all plots across all NEON sites, resulted in 30 traps per site.      
 * Collection frequency is biweekly when temperatures are > 4 deg C.  Maximum of 13 collection bouts per year.  
 * plots will usually stay the same at each site through time, though these are subject to change (e.g. at NIWO, plot 004 was switched for plot 013 in 2017)
 
