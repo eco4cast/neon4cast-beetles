@@ -1,0 +1,83 @@
+---
+title: "abundance"
+author: "Carl Boettiger"
+date: "2020-07-21"
+output: 
+  github_document:
+    df_print: tibble
+---
+
+
+```{r setup, message=F}
+library(dplyr)
+```
+
+
+```{r}
+bet_sorting <- readRDS("data/bet_sorting.rds")
+```
+
+
+## Compute observed richness
+
+```{r message = FALSE}
+
+richness <- bet_sorting %>%  
+  select(taxonID, siteID, collectDate) %>%
+  distinct() %>%
+  count(siteID, collectDate)
+
+richness
+```
+
+
+Let's use the 2019 data as the "future" to assess forecast skill.  Also, let's aggregate by month so it's a bit easier to line up 'historic' and 'predicted' values over a seasonal trend.  
+
+```{r  message=F}
+richness <- richness %>% 
+  mutate(month = format(collectDate, "%Y-%m")) %>%
+  mutate(month = as.Date(paste(month, "01", sep="-")))
+
+future<- richness %>% filter(collectDate >= "2019-01-01")
+train <- richness %>% filter(collectDate < "2019-01-01")
+```
+
+## Average baseline dummy forecast  
+
+Note: we average all historical months to forecast the future month, so that our dummy forecast can still reflect seasonal variability to some extent.  Note also that for each month of a given year we usually have two bouts of sampling, so those are also just being averaged in here.  
+
+```{r  message=F}
+null_forecast <- richness %>% 
+  mutate(month = lubridate::month(month, label=TRUE)) %>%
+  group_by(month, siteID) %>%
+  summarize(mu = mean(n, na.rm=TRUE),
+            sigma = sd(n, na.rm=TRUE))
+
+null_forecast
+```
+
+
+## Scoring
+
+We can easily compute a proper score for each site:
+
+
+```{r  message=F}
+
+proper_score <- function(x, mu, sigma){ -(mu - x )^2 / sigma^2  - log(sigma) }
+
+
+proper_scores <- future %>%
+  mutate(month = lubridate::month(month, label=TRUE)) %>%
+  select(month, siteID, true = n) %>% 
+  left_join(null_forecast)  %>%
+  mutate(score = proper_score(true, mu, sigma))
+```
+
+
+We could also compute a net score by site (summed over month) or overall score (at least I think you're allowed to just sum proper scores):
+
+```{r}
+proper_scores %>%  group_by(siteID) %>% summarize(sum(score, na.rm = TRUE))
+proper_scores %>% pull(score) %>% sum(na.rm = TRUE)
+```
