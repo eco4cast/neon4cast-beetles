@@ -12,7 +12,7 @@ output: html_document
 This is a brain dump with helpful information for understanding NEON's carabid data products, from experimental design to data structure
 
 #### Experimental design  
-* Since 2014 to 2017, 4 traps per plot, 10 plots per site, at all terrestrial sites, summed up to 40 traps per NEON site; eaach trap in a given plot oriented towards the one of the four cardinal directions.
+* Since 2014 to 2017, 4 traps per plot, 10 plots per site, at all terrestrial sites, summed up to 40 traps per NEON site; each trap in a given plot oriented towards the one of the four cardinal directions.
 * 2018 onward, the northward trap was eliminated from all plots across all NEON sites, resulted in 30 traps per site.      
 * Collection frequency is biweekly (every 12-14th day within the sampling bout): Average `trappingDays` ~14
 
@@ -50,11 +50,11 @@ field_data <- bet_fielddata %>%
         * ![plot_carab](figures/plot_carab.png)
 
 #### sorting, filtering, and ID
-* After collection, the samples are separated into carabids and bycatch (both vert and other invert) amd subsequently, carabids samples are identified at multiple levels of expertise. 
-* Sorted & IDed by feild tech $\rightarrow$ subset of sorted  pinned (parataxonomist) and re-IDed $\rightarrow$ subset of pinned to expert taxonomists $\rightarrow$ subset to DNA bardocing
+* After collection, the samples are separated into carabids and bycatch (both vert and other invert) and subsequently, carabids samples are identified at multiple levels of expertise. 
+* Sorted & IDed by field tech $\rightarrow$ subset of sorted  pinned (parataxonomist) and re-IDed $\rightarrow$ subset of pinned to expert taxonomists $\rightarrow$ subset to DNA bardocing
 * Taxonomic expert's ID overrides identifications by the sorter and pinner.  
 * Abundances are recorded by the sorting technician on the original sample and are not preserved across the different levels of ID. 
-* For example, a sample of 200 individuals IDed as species A was sent to the pinner. Pinner IDs two new species (B and C) within that sample. Likewise, the     expert validates A, B, and C and adds two more species D and E. Niether expert nor parataxonomist record which individuals are B, C, D, and E. We have to     assume that only a single individual was identified for each of those new species, and the remaining individuals were correctly identified originally. 
+* For example, a sample of 200 individuals IDed as species A was sent to the pinner. Pinner IDs two new species (B and C) within that sample. Likewise, the     expert validates A, B, and C and adds two more species D and E. Neither expert nor parataxonomist record which individuals are B, C, D, and E. We have to     assume that only a single individual was identified for each of those new species, and the remaining individuals were correctly identified originally. 
     * abundance for species B, C, D, E = 1
     * $Abundance$ $of$ $species$ $A$ $=$ $Relative$ $abundance$ $documented$ $by$ $sorting$ $tech$ $-$ $No$ $of$ $new$ $species$ $IDed$ by $pinner$ $and$ $expert$
       *   $200 - (2+2)$
@@ -66,7 +66,7 @@ field_data <- bet_fielddata %>%
 #### Data structure
 * Data resolution
     * ID data is recorded at trap resolution
-    * finest temporal resoluton: `daysOfTrapping`, the range between `setDate` and `collectDate` per bout
+    * finest temporal resolution: `daysOfTrapping`, the range between `setDate` and `collectDate` per bout
 * The data product splits into 9 dataframes  
     - 5 dataframes for data  
         * `bet_fielddata` - 75 day latency.  One record expected per sampleID for all of time
@@ -74,7 +74,7 @@ field_data <- bet_fielddata %>%
         * `bet_sorting` - 330 day latency. Sorting of the field-collected pitfall samples by sorting technicians.  One record expected per subsampleID for               all of time. One row per taxa per trapID per plotID per collectDate. Carabid subsamples may generate zero or more children in the                            bet_parataxonomistID table
         * `bet_parataxonomistID` - 330 day latency. Ground beetle pinning/pointing and identifications by parataxonomists.  one row per individual beetle                pinned. One record expected per individualID for all of time. The number of individualIDs pulled from a given subsampleID should not exceed the              individualCount given in the `bet_sorting` table.
         * `bet_archivepooling` - 330 day latency. one row per pooled archive vial (archiveID), which is a mixture of subsampleIDs. Not all subsampleID’s from             `bet_sorting` contribute to mixtures; some are pinned or maintained at the trap-level.  
-        * `bet_expertTaxonomistIDProcessed` - 600 day latency. one row per individual beetle professionally identified. `scientificName` includes sub-species level identification. Better to create a new column concatinating `genus` and `specificEpithet` or exclude `infraspecificEpithet` from `scientificName`.    
+        * `bet_expertTaxonomistIDProcessed` - 600 day latency. one row per individual beetle professionally identified. `scientificName` includes sub-species level identification. Better to create a new column concatenating `genus` and `specificEpithet` or exclude `infraspecificEpithet` from `scientificName`.    
         * A record from `bet_fielddata` may have zero (no samples collected) or multiple child records in `bet_sorting` if multiple taxa were found in the               same same (`sampleID`). A record from `bet_sorting` may have zero (no samples collected) or multiple child records in `bet_parataxonomistID` if              multiple individuals were selected for pinning from each `subsampleID`. A record in `bet_archivepooling` may have one or more records in                     `bet_sorting`, because multiple `subsampleIDs` may have been pooled into a single archiveVial. Each record in `bet_parataxonomistID` should have             zero or one corresponding records in `bet_expertTaxonomistIDProcessed`, depending on whether that `individualID` was selected for expert                     identification. Each record in `bet_parataxonomistID` may have zero or one corresponding records in `bet_expertTaxonomistIDRaw`. Since all beetles are sorted before pinning, the total number of beetles collected can be calculated as the sum of `individualCount` in `bet_sorting`.
             
     * 4 dataframes for metadata  
@@ -92,7 +92,7 @@ field_data <- bet_fielddata %>%
 * Lots of useful information on data structure included in the User Guide pdf linked in the data product webpage  
 * ID: if confident about the genus of a specimen and uncertain about the species level ID $\rightarrow$ ‘cf. species’ or ‘aff. species’ 
     * indicates that the identification provided in `scientificName` is possibly incorrect
-    * Cryptic species: when two species that are morphologically indistinguishable, `scientificName` lists likely species pairs where the species epithet is          seperated by `/`.
+    * Cryptic species: when two species that are morphologically indistinguishable, `scientificName` lists likely species pairs where the species epithet is          separated by `/`.
     * if `scientificName` contains `sp.` $\rightarrow$ all individuals of that group likely belong to a single species; `spp.` -> all individuals can belong         to multiple species, even multiple genera 
 * `MorphoSpecies`: assigned by parataxonomists. Beetles morphologically similar, BUT, cannot assign a `scientificName`. 
     * `morphoSpecies` are split or merged after DNA barcoding or expert ID.
@@ -101,21 +101,22 @@ field_data <- bet_fielddata %>%
 #### data quirks
 * If all traps were not recovered from a given plot on the same day within a bout (the traps collected on the 12th day will be reset), the remaining traps        will be collected the following day BUT the traps will not be reset on the date of collection. The reset will be delayed until the start of the new bout      for the traps will delayed collection dates
 * Sampling days/No of bouts across years for a site may not be uniform. 
-    * if temeprature drops <4$^\circ$C before the regular end of the sampling season, surveyscollection stops
-    * if temeprature remains <4$^\circ$C even after or at the regular initiation of trap collection, trapping is delayed until temeprature >4$^\circ$C
+    * if temperature drops <4$^\circ$C before the regular end of the sampling season, surveyscollection stops
+    * if temperature remains <4$^\circ$C even after or at the regular initiation of trap collection, trapping is delayed until temperature >4$^\circ$C
 * accuracy in species ID: 
     * Across all sites for all bouts/samples, per species, parataxonomist ID agree with that of experts >90% of the time. 
     * For most sites, the species ID agreement between parataxonomists vs experts is 100%
     * 100% incorrect ID is limited to a handful species recorded from a few sites
     * Temporal gaps in data/bouts
-        * Traps not collected in 12-14 day interval: this is very uncommon; for the entire history of pitfall trap set-up, the missing data represents <1% of             the traps. This within-bout trap collection gaps msotly come from two domains.   
+        * Traps not collected in 12-14 day interval: this is very uncommon; for the entire history of pitfall trap set-up, the missing data represents <1% of             the traps. This within-bout trap collection gaps mostly come from two domains.   
         * Domain 10: trapping can be truncated mid-season
         * Domain 12: if $\geq$ 5 instances of trap predation are observed within a single collection bout $\rightarrow$ site-wide temporary trap closures for two bouts (28              days)
         * Trap damage: this is slightly high: ~6% across all sites
-* The IDs by parataxonomists have non-carabid taxa ergo `bet_parataxonomistID` contains non-carabid families incorrectly IDed as carabids although all non-carabids should have been sorted out as bycatch by sorting technicians; i.e., expert taxanomists have identified non-carabid families in `bet_expertTaxonomistIDProcessed`.
-* Species-level match between parataxonomists and expert taxonomists: ~90%. Across all sites, for sample subset sent to experts, the parataxonomists have IDed over 90% of bettles correctly to the species level when matched with expert ID.
+* The IDs by parataxonomists have non-carabid taxa ergo `bet_parataxonomistID` contains non-carabid families incorrectly IDed as carabids although all non-carabids should have been sorted out as bycatch by sorting technicians; i.e., expert taxonomists have identified non-carabid families in `bet_expertTaxonomistIDProcessed`.
+* Species-level match between parataxonomists and expert taxonomists: ~90%. Across all sites, for sample subset sent to experts, the parataxonomists have IDed over 90% of beetles correctly to the species level when matched with expert ID.
 * 570+ species-level mismatches between experts and parataxonomists
 * Only 430+ `morphospeciesID`s by parataxonomists. The number of beetles with a morphospecies ID is ~5% of the all beetles in `bet_parataxonomistID` dataset
+* 99.98% of the traps were collected within 12-14 day window (a few traps were collected by later or earlier than 12-14 days); when `sampleCollected == "Y"` 
 
 
 ```{r} 
