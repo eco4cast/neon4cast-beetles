@@ -94,8 +94,8 @@ field_data <- bet_fielddata %>%
     * indicates that the identification provided in `scientificName` is possibly incorrect
     * Cryptic species: when two species that are morphologically indistinguishable, `scientificName` lists likely species pairs where the species epithet is          separated by `/`.
     * if `scientificName` contains `sp.` $\rightarrow$ all individuals of that group likely belong to a single species; `spp.` -> all individuals can belong         to multiple species, even multiple genera 
-* `MorphoSpecies`: assigned by parataxonomists. Beetles morphologically similar, BUT, cannot assign a `scientificName`. 
-    * `morphoSpecies` are split or merged after DNA barcoding or expert ID.
+* `MorphospeciesID`: assigned by parataxonomists. Beetles morphologically similar, BUT, cannot assign a `scientificName`. 
+    * `morphospeciesID` are split or merged after DNA barcoding or expert ID.
     * 
 
 #### data quirks
@@ -115,7 +115,7 @@ field_data <- bet_fielddata %>%
 * The IDs by parataxonomists have non-carabid taxa ergo `bet_parataxonomistID` contains non-carabid families incorrectly IDed as carabids although all non-carabids should have been sorted out as bycatch by sorting technicians; i.e., expert taxonomists have identified non-carabid families in `bet_expertTaxonomistIDProcessed`.
 * Species-level match between parataxonomists and expert taxonomists: ~90%. Across all sites, for sample subset sent to experts, the parataxonomists have IDed over 90% of beetles correctly to the species level when matched with expert ID.
 * 570+ species-level mismatches between experts and parataxonomists
-* Only 430+ `morphospeciesID`s by parataxonomists. The number of beetles with a morphospecies ID is ~5% of the all beetles in `bet_parataxonomistID` dataset
+* Only 430+ `morphospeciesID`s by parataxonomists. The number of beetles with a `morphospeciesID` is ~5% of the all beetles in `bet_parataxonomistID` dataset
 * 99.98% of the traps were collected within 12-14 day window (a few traps were collected by later or earlier than 12-14 days); when `sampleCollected == "Y"` 
 
 
