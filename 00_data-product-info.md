@@ -11,6 +11,7 @@ output: html_document
 
 This is a brain dump with helpful information for understanding NEON's carabid data products, from experimental design to data structure
 
+
 #### Experimental design  
 * Since 2014 to 2017, 4 traps per plot, 10 plots per site, at all terrestrial sites, summed up to 40 traps per NEON site; each trap in a given plot oriented towards the one of the four cardinal directions.
 * 2018 onward, the northward trap was eliminated from all plots across all NEON sites, resulted in 30 traps per site.      
@@ -40,9 +41,6 @@ field_data <- bet_fielddata %>%
     * If sites experience two peak greens, the start date is based on the first cycle of greening and the end date is based on the second cycle. 
     * If temperature is unusually cold (<4$^\circ$C), then initial sampling can be delayed or stopped earlier than in previous years
     * No additional sampling will be carried out if the temperature remains higher than normal
-    
-
-
 * plots will usually stay the same at each site through time, though these are subject to change (e.g. at NIWO, plot 004 was switched for plot 013 in 2017)
 
 ##### Plot layout 

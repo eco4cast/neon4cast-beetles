@@ -70,9 +70,48 @@ bet_sorting %>%
     facet_wrap(~siteID)
 ```
 
+
+
+
+
+
+
+
+
+
 ####Average baseline dummy forecast  
+
+```{r}
+
+mnCarabid <- carabid_count %>%
+	group_by(siteID) %>% 
+	summarise(mnAbund=mean(totalCount), 
+		mnTrapNight=mean(trapnights), 
+		mnSAbund=mean(totalCount/trapnights))
+
+```
+
+
+
+
+
 
 
 
 #### Random walk dummy forecast 
+
+```{r}
+
+rwCarabid <- carabid_count %>%
+	group_by(siteID) %>% 
+	summarise(rwAbund=mean(totalCount[which.max(collectDate)]), 
+		rwTrapNight=mean(trapnights[which.max(collectDate)]), 
+		rwSAbund=mean(totalCount[which.max(collectDate)]/trapnights[which.max(collectDate)]))   
+
+```
+
+
+
+
+
 
