@@ -1,0 +1,55 @@
+---
+title: "taxonomy"
+author: "Carl Boettiger"
+date: "2020-07-21"
+output: 
+  github_document:
+    df_print: tibble
+---
+
+
+```{r setup, message=F}
+library(dplyr)
+para <- readRDS("data/bet_parataxonomist.rds")
+sorting <- readRDS("data/bet_sorting.rds")
+field <- readRDS("data/bet_fielddata.rds")
+```
+
+Observe that `subsampleID` is unique in the sorting table, and is also found in the parataxonomy table.  
+
+```{r}
+sorting %>% count(subsampleID, sort = TRUE) # most frequent occurrence of any id is 1
+```
+
+
+This makes it a good key value to join on.  Note we *MUST NOT* join on the other columns, which can differ between the tables!
+
+
+Observe that many species that could not be identified by the sorters have been identified by the para-taxonomists (and thus do not get a morpho-species assigned by the parataxonomist.)  Note that the `.x` indicates a column from the sorting table, and the `y` from the parataxonomy table.  
+
+```{r}
+taxa <- sorting %>% left_join(para, by = "subsampleID")
+taxa %>% select(scientificName.x, scientificName.y, morphospeciesID.x, morphospeciesID.y, taxonID.x, taxonID.y, taxonRank.x, taxonRank.y)
+```
+
+How many species of carabid did the sorting step fail to classify to at least the species level?
+
+```{r}
+taxa %>% filter(grepl("carabid", sampleType)) %>% count(taxonRank.x)
+
+unclassified <- taxa %>% filter(grepl("carabid", sampleType), taxonRank.x %in% c("family", "genus"))
+```
+
+Let's focus on those 8,974 unclassified beetles. How many have the not been classified by the parataxonomists?
+
+```{r}
+unclassified %>% count(taxonRank.y)
+```
+
+Of those 8,974, 3397 still remain unclassified at the family level, and another 1874 at the genus level (so about 41% were successfully identified).  But also note that the parataxonomists have been able to at least give morphospecies ids to nearly all (only 100 have no `morphospeciesID.y`, though some of these have `morphospeciesID.x` so possibly the parataxonomist was questing that call).  Also note that almost all of those have "remarks" with what looks to be a guess for the species ID (i.e. could be a good proxy for the morphospecies)
+
+```{r}
+unclassified %>% filter(taxonRank.y == "family", is.na(morphospeciesID.y)) %>% select(scientificName.y, remarks.y)
+```
+
+Joining on the expert table maybe more of these can be identified. 
