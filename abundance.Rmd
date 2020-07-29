@@ -85,9 +85,11 @@ bet_sorting %>%
 
 mnCarabid <- carabid_count %>%
 	group_by(siteID) %>% 
-	summarise(mnAbund=mean(totalCount), 
-		mnTrapNight=mean(trapnights), 
-		mnSAbund=mean(totalCount/trapnights))
+	summarise(mnAbund=mean(totalCount, na.rm=TRUE), 
+		mnTrapNight=mean(trapnights, na.rm=TRUE), 
+		mnSAbund=mean(totalCount/trapnights, na.rm=TRUE), 
+		sdAbund=sd(totalCount, na.rm=TRUE),
+		sdSabund=sd(totalCount/trapnights, na.rm=TRUE))
 
 ```
 
@@ -104,9 +106,15 @@ mnCarabid <- carabid_count %>%
 
 rwCarabid <- carabid_count %>%
 	group_by(siteID) %>% 
-	summarise(rwAbund=mean(totalCount[which.max(collectDate)]), 
-		rwTrapNight=mean(trapnights[which.max(collectDate)]), 
-		rwSAbund=mean(totalCount[which.max(collectDate)]/trapnights[which.max(collectDate)]))   
+	summarise(rw.mnAbund=mean(totalCount[which.max(collectDate)], na.rm=TRUE), 
+		rw.TrapNight=mean(trapnights[which.max(collectDate)], na.rm=TRUE), 
+		rw.SAbund=mean(totalCount[which.max(collectDate)]/
+			trapnights[which.max(collectDate)], na.rm=TRUE), 
+		rw.sdAbund=sd(totalCount[which.max(collectDate)]),
+		rw.sdSabund=sd(totalCount[which.max(collectDate)]/
+			trapnights[which.max(collectDate)], na.rm=TRUE)
+	) 
+
 
 ```
 
