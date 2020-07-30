@@ -1,3 +1,45 @@
+resolve_taxonomy <- function(sorting, para, expert){
+  
+  taxonomy <-
+    left_join(sorting, para, by = "subsampleID")  %>% 
+    left_join(expert, by = "individualID") %>%
+    
+    ## ("Optionally") prefer the para table cols over the sorting table cols; unless those paras are NA (e.g. for unpinned subsamples)
+    mutate(taxonRank.x = ifelse(is.na(taxonRank.y), taxonRank.x, taxonRank.y),
+           scientificName.x = ifelse(is.na(scientificName.y), scientificName.x, scientificName.y),
+           taxonID.x = ifelse(is.na(taxonID.y), taxonID.x, taxonID.y),
+           morphospeciesID.x =  ifelse(is.na(morphospeciesID.y), morphospeciesID.x, morphospeciesID.y)) %>%
+    ## Now, prefer expert values over sorting or para ones, where available
+    mutate(taxonRank = ifelse(is.na(taxonRank), taxonRank.x, taxonRank),
+           scientificName = ifelse(is.na(scientificName), scientificName.x, scientificName),
+           taxonID = ifelse(is.na(taxonID), taxonID.x, taxonID),
+           morphospeciesID =  ifelse(is.na(morphospeciesID), morphospeciesID.x, morphospeciesID)) %>%
+    
+    select(-ends_with(".x"), -ends_with(".y"))
+  
+  
+  #### Should we add a "species" column, using morphospecies or the best available?
+  ## Use morphospecies if available for higher-rank-only classifications,
+  ## Otherwise, binomialize the scientific name:
+  taxonomy <- taxonomy %>% 
+    mutate(species = 
+             ifelse(taxonRank %in% c("subgenus", "genus", "family", "order") & !is.na(morphospeciesID), 
+                    morphospeciesID,
+                    taxadb::clean_names(scientificName)
+             )
+    )
+  
+  ## Beetles must be identified as carabids by both sorting table and the taxonomists (~3 non-Carabidae slip through in sorting)
+  beetles <- taxonomy %>% 
+    filter(grepl("carabid", sampleType)) %>%
+    filter(family == "Carabidae" | is.na(family))
+  
+  
+}
+  
+
+
+
 ## Adapted from Kari Norman (c) 2019
 ## https://github.com/martaajarzyna/temporalNEON/blob/5b428dacc68630ce23bd43f4393821c3d03f34be/data-raw/beetles_processing.Rmd
 
@@ -18,7 +60,7 @@ library(dplyr)
 # 
 # The resulting table will likely have more rows than the input table, because multiple the subsample is now broken up into
 # individuals always.  (be cautious of what this does to the individualCount column??)
-resolve_taxonomy <- function(sorting, para, expert){
+resolve_taxonomy_kari <- function(sorting, para, expert){
   
   ## Join sorting by subsampleID, and prefer verdict of parataxonmist
   data_pin <-sorting %>% 
@@ -94,11 +136,3 @@ resolve_taxonomy <- function(sorting, para, expert){
 
 ## Hmm, confirm any count greater than 1 had no parataxonomy?
 ## beetles_data %>% filter(grepl("carabid", sampleType)) %>% count(individualCount, sort=TRUE) 
-
-## and here we go:
-expert <- readRDS("data/bet_expert.rds")
-para <- readRDS("data/bet_parataxonomist.rds")
-sorting <- readRDS("data/bet_sorting.rds")
-
-beetles <- resolve_taxonomy(sorting, para, expert)
-
