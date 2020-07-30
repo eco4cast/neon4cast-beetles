@@ -36,7 +36,7 @@ resolve_taxonomy <- function(sorting, para, expert){
     select(-ends_with(".x"), -ends_with(".y"))
   
   
-  
+  ## CB: I don't think we need this. 
   #some subsamples weren't fully ID'd by the pinners, so we have to recover the unpinned-individuals
   lost_indv <- data_pin %>% 
     filter(!is.na(individualID)) %>%
@@ -47,16 +47,18 @@ resolve_taxonomy <- function(sorting, para, expert){
     select(subsampleID, individualCount = unidentifiedCount) %>%
     left_join(sorting %>% select(-individualCount), by = "subsampleID") %>%
     mutate(identificationSource = "sort")
-  
-  
-  
   #add unpinned-individuals back to the pinned id's, adjust the individual counts so pinned individuals have a count of 1
   data_pin <- data_pin %>%
     mutate(individualCount = ifelse(identificationSource == "sort", individualCount, 1)) %>%
     bind_rows(lost_indv)
   
+  
   #There are ~10 individualID's for which experts ID'd more than one species (not all experts agreed), 
   ## we want to exclude those expert ID's as per Katie Levan's suggestion
+  
+  ## CB: More accurately, there are 3 IDs for which the same expert has given the same individualID two different scentificNames,
+  ## and precisely 1 ID where two experts have assessed and appear to disagree.  (possibly a data entry problem, as in this case
+  ## there are 2 records of the same expert giving the same ID as well)
   ex_expert_id <- expert %>% 
     group_by(individualID) %>% 
     filter(n_distinct(taxonID) > 1) %>% 
@@ -86,6 +88,12 @@ resolve_taxonomy <- function(sorting, para, expert){
   beetles_data
 }
 
+## Hmm, why 2 distinct? 1 sci-name from the subsample was left not resolved below genus
+## beetles_data %>% filter(uid == "98b5254e-0afc-4599-9c32-a0690085c6b9") %>% select(-individualID) %>% distinct() %>% select(scientificName, taxonRank)
+
+
+## Hmm, confirm any count greater than 1 had no parataxonomy?
+## beetles_data %>% filter(grepl("carabid", sampleType)) %>% count(individualCount, sort=TRUE) 
 
 ## and here we go:
 expert <- readRDS("data/bet_expert.rds")

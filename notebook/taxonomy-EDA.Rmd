@@ -10,10 +10,12 @@ output:
 
 ```{r setup, message=F}
 library(dplyr)
-expert <- readRDS("data/bet_expert.rds")
-para <- readRDS("data/bet_parataxonomist.rds")
-sorting <- readRDS("data/bet_sorting.rds")
+expert <- readRDS("../data/bet_expert.rds")
+para <- readRDS("../data/bet_parataxonomist.rds")
+sorting <- readRDS("../data/bet_sorting.rds")
 ```
+
+
 
 ```{r}
 
@@ -53,13 +55,28 @@ beetles %>% count(scientificName) # 747
 
 
 
+This approach misses species ID'd by parataxomonists to a finer resolution but where we do not have those individualIDs in the expert table.  Most of these are 2013 and 2014 samples -- perhaps there was no expert ID step then?  The rest are more recent -- probably due to the 2 year latency on the expert data table?
+
+```{r}
+library(ggplot2)
+
+
+para_id_only <- 
+  left_join(sorting, para, by = "subsampleID")  %>% 
+  left_join(expert, by = "individualID") %>% 
+  filter(scientificName.x != scientificName.y, is.na(scientificName)) %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, collectDate.x, scientificName, taxonRank) 
+
+para_id_only %>% count(taxonRank.x) # 711 at family level
+para_id_only %>% count(taxonRank.y) # only 5 at family level
+
+para_id_only %>% ggplot(aes(collectDate.x)) + geom_histogram()
+```
 
 
 
 
-
-
-
+---------------
 
 
 
@@ -159,10 +176,6 @@ A %>% filter(subsampleID != matches)   %>%
   select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, subsampleID) %>%
   filter(is.na(scientificName.y), !is.na(scientificName.x)) %>% select(subsampleID) %>% inner_join(para)
 
-
-A %>% 
-  #filter(collectDate.x > as.Date("2017-01-01")) %>%
-  pull(subsampleID) %>% length() - n_matches
 ```
 
 
