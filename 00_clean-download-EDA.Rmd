@@ -45,10 +45,16 @@ rm(carabid_raw)
 
 Look at the data composition
 ```{r}
-bet_parataxonomistID %>% count(taxonRank, sort=TRUE) #look into morphospecies too
 bet_parataxonomistID %>% count(siteID, sort=TRUE) # 47 sites
 bet_sorting %>% filter(sampleType == "carabid" | sampleType == "other carabid") %>%
     count(taxonRank, sort=TRUE) #look into morphospecies too
+bet_sorting %>% filter(sampleType == "carabid" | sampleType == "other carabid", 
+                       is.na(morphospeciesID),
+                       collectDate <= "05-31-2018") %>%
+    count(taxonRank, sort=TRUE) 
+bet_sorting %>% filter(sampleType == "carabid" | sampleType == "other carabid", 
+                       taxonRank=="family") %>%
+    count(scientificName, sort=TRUE) 
 ```
 If all individual beetles collected are in `bet_sorting`, then how can there be more species in in `bet_parataxonomistID`? Is there more refined identification in the pinning process when `bet_parataxonomist` is created?
 
@@ -60,6 +66,28 @@ bet_fielddata %>%
     theme(axis.text.x = element_text(angle = 90))
 ```
 Every site is missing traps; some are missing a substantial number. This supports our choice to standardize abundance by trap-night.
+
+Visualize time series of number of traps per site. 
+```{r}
+bet_fielddata %>%
+  filter(sampleCollected=="Y") %>%
+  mutate(plot_trap = paste0(namedLocation, ".", trapID, sep="")) %>%
+  count(siteID, collectDate) %>%
+  ggplot() + 
+  geom_point(aes(x=collectDate, y=n)) +
+  facet_wrap(~siteID)
+
+bet_fielddata %>%
+  filter(sampleCollected=="N") %>%
+  count(siteID, collectDate) %>%
+  ggplot() + 
+  geom_line(aes(x=collectDate, y=n, color="red")) +
+  facet_wrap(~siteID)
+
+# how to visualize the difference between number of traps set vs collected 
+  #line for total traps set (green)
+  #line for number of traps not collected (red)
+```
 
 
 Years of data available by site
@@ -192,6 +220,38 @@ bet_sorting %>%
 # What do we do with this information?
 ```
 
+We think we want to pool subspecies to the species-level. Are there subspecies that share the same species as another subspecies?
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>% 
+    mutate(scientificName_sp = ifelse(taxonRank=="subspecies",
+                                      word(scientificName, 1, 2, sep=" "), scientificName)) %>%
+  filter(taxonRank=="subspecies") %>% select(scientificName, scientificName_sp) %>% distinct() %>%
+  count(scientificName_sp, sort=T) 
+#11 pooled species can be broken down into two subspecies
+
+# How many individuals are part of those 22 subspecies?
+two_subsp_one_sp <- bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>% 
+    mutate(scientificName_sp = ifelse(taxonRank=="subspecies",
+                                      word(scientificName, 1, 2, sep=" "), scientificName)) %>%
+  filter(taxonRank=="subspecies") %>% select(scientificName, scientificName_sp) %>% distinct() %>%
+  count(scientificName_sp, sort=T) %>% filter(n>1) %>% pull(scientificName_sp)
+bet_sorting %>%
+  filter(sampleType == "carabid" | sampleType == "other carabid") %>% 
+  mutate(scientificName_sp = ifelse(taxonRank=="subspecies",
+                                      word(scientificName, 1, 2, sep=" "), scientificName)) %>%
+  filter(taxonRank == "subspecies",
+         scientificName_sp %in% two_subsp_one_sp) %>%
+  group_by(scientificName, scientificName_sp) %>%
+  summarize(totalInds = sum(individualCount)) %>% arrange(-totalInds)
+sum(bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>% pull(individualCount), na.rm=T)
+#3203 individual beetles out of 159450 total individuals have a subspecies ID that if share a species ID with another subspecies
+
+# There are several subspecies that pool 
+
+```
 #### Clean
 
 Create a dataframe where every row is an individual beetle that has been collected by NEON.
