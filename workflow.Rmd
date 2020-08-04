@@ -1,13 +1,16 @@
 ---
-title: "abundance"
-author: "Anna Spiers"
-date: "7/9/2020"
-output: github_document
+title: "Null Forecasts for the EFI NEON Community Ecology Challenge"
+output: 
+  github_document:
+    df_print: tibble
 ---
 
 
 ```{r setup, message=FALSE}
 library(tidyverse)
+library(neonstore) # remotes::install_github("cboettig/neonstore")
+library(contentid) # remotes::install_github("cboettig/contentid")
+
 Sys.setenv("NEONSTORE_HOME" = "cache/")
 
 ## Set the year of the prediction.  This will be excluded from the training data and used in the forecast
@@ -48,7 +51,6 @@ beetles <- resolve_taxonomy(sorting, para, expert) %>%
 ```
 
 
-
 ## Generate derived richness product
 
 Focuses on `taxonID` as the unit of taxonomy, which corresponds to best resolved scientific name.  Use `morphospecies` to focus on species-level (binomal names only),
@@ -59,6 +61,8 @@ richness <- beetles %>%
   select(taxonID, siteID, collectDate, month, year) %>%
   distinct() %>%
   count(siteID, collectDate, month, year)
+
+richness
 ```
 
 ## Generate derived CPUE product
@@ -77,23 +81,23 @@ counts <- beetles %>%
   group_by(collectDate, siteID, year, month) %>%
     summarize(count = sum(individualCount, na.rm = TRUE))
 
-cpue_df <- counts %>% 
+cpue <- counts %>% 
   left_join(effort) %>% 
   mutate(cpue = count / trapnights) %>% ungroup()
 
 
-cpue_df 
+cpue 
 ```
 
 ## Register (publish) derived products
 
-
-
 ```{r}
+readr::write_csv(richness, "products/richness.csv")
+readr::write_csv(cpue, "products/cpue.csv")
 
+contentid::content_id("products/richness.csv")
+contentid::content_id("products/cpue.csv")
 ```
-
-
 
 
 ## Compute (null model) Forecasts
@@ -122,7 +126,7 @@ null_richness
 
 
 ```{r}
-null_cpue <- cpue_df %>% 
+null_cpue <- cpue %>% 
       filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
   summarize(mean = mean(cpue, na.rm=TRUE),
@@ -135,6 +139,14 @@ null_cpue <- cpue_df %>%
 
 ### Register (publish) the forecast
 
+
+```{r}
+readr::write_csv(null_richness, "products/richness_forecast.csv")
+readr::write_csv(null_cpue, "products/cpue_forecast.csv")
+
+contentid::content_id("products/richness_forecast.csv")
+contentid::content_id("products/cpue_forecast.csv")
+```
 
 
 
@@ -170,18 +182,11 @@ Extract the true CPUE  for `r forecast_year` and compute score
 
 
 ```{r message=FALSE}
-true_cpue <- cpue_df %>%
+true_cpue <- cpue %>%
   filter(year >= forecast_year) %>%
   select(month, siteID, true = cpue)
 
 cpue_score <- score(null_cpue, true_cpue)
-```
-
-
-
-
-```{r}
-readr::write_csv(score_df, "richness_score.csv")
 ```
 
 
@@ -194,7 +199,35 @@ cpue_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
 
 ```
 
+## Register / publish scores
 
+
+```{r}
+readr::write_csv(richness_score, "products/richness_score.csv")
+readr::write_csv(cpue_score, "products/cpue_score.csv")
+
+contentid::content_id("products/richness_score.csv")
+contentid::content_id("products/cpue_score.csv")
+```
+
+We can stick these data files anywhere convenient, as their content-based identifiers are location-independent.  If we put them somewhere public,
+we can then **register** that location to a hash archive, allowing us to automatically resolve the identifier later.  If we later put that data
+in a **permanent archive**, we can register that location as well, and the resolver will be able to access it there even if the other copies 
+are eventually lost.  Throughout this, the identifier is unchanged. If the _content_ of any of these files is altered in any way, that will
+alter the identifier, which prevents post-hoc changes from going unnoticed.
+
+```{r eval=fs::file_exists("/minio/shared-data")}
+fs::dir_copy("products", "/minio/shared-data", overwrite = TRUE)
+files <- fs::path_rel(fs::dir_ls("products"))
+urls <- paste0("https://minio.thelio.carlboettiger.info/shared-data/", files)
+ids <- contentid::register(urls, "https://hash-archive.org")
+
+## Confirm:
+x <- contentid::resolve(ids[[1]])
+contentid::content_id(x)
+
+data.frame(files, ids)
+```
 
 
 
