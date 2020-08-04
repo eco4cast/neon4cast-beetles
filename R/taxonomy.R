@@ -1,12 +1,18 @@
 
 # Update `scientificName`, `taxonID`, `taxonRank` and `morphospeciesID` using assignments from parataxonomy and expert taxonomy.
 # 
+library(dplyr)
 resolve_taxonomy <- function(sorting, para, expert){
   
   taxonomy <-
-    left_join(sorting, para, by = "subsampleID")  %>% 
-    left_join(expert, by = "individualID") %>%
-    
+    left_join(sorting, 
+              select(para, subsampleID, individualID, scientificName, taxonRank, taxonID, morphospeciesID), 
+              by = "subsampleID")  %>% 
+    ## why are there so many other shared columns (siteID, collectDate, etc?  and why don't they match!?)
+    ## we use `select` to avoid these
+    left_join(
+      select(expert, -uid, -namedLocation, -domainID, -siteID, -collectDate, -plotID, -setDate, -collectDate),
+      by = "individualID") %>%
     ## ("Optionally") prefer the para table cols over the sorting table cols; unless those paras are NA (e.g. for unpinned subsamples)
     mutate(taxonRank.x = ifelse(is.na(taxonRank.y), taxonRank.x, taxonRank.y),
            scientificName.x = ifelse(is.na(scientificName.y), scientificName.x, scientificName.y),
@@ -16,7 +22,11 @@ resolve_taxonomy <- function(sorting, para, expert){
     mutate(taxonRank = ifelse(is.na(taxonRank), taxonRank.x, taxonRank),
            scientificName = ifelse(is.na(scientificName), scientificName.x, scientificName),
            taxonID = ifelse(is.na(taxonID), taxonID.x, taxonID),
-           morphospeciesID =  ifelse(is.na(morphospeciesID), morphospeciesID.x, morphospeciesID)) %>%
+           morphospeciesID =  ifelse(is.na(morphospeciesID), morphospeciesID.x, morphospeciesID),
+           nativeStatusCode = ifelse(is.na(nativeStatusCode.y), nativeStatusCode.x, nativeStatusCode.y),
+           sampleCondition = ifelse(is.na(sampleCondition.y), sampleCondition.x, sampleCondition.y)
+           
+           ) %>%
     
     select(-ends_with(".x"), -ends_with(".y"))
   
@@ -25,7 +35,7 @@ resolve_taxonomy <- function(sorting, para, expert){
   ## Use morphospecies if available for higher-rank-only classifications,
   ## Otherwise, binomialize the scientific name:
   taxonomy <- taxonomy %>% 
-    mutate(species = 
+    mutate(morphospecies = 
              ifelse(taxonRank %in% c("subgenus", "genus", "family", "order") & !is.na(morphospeciesID), 
                     morphospeciesID,
                     taxadb::clean_names(scientificName)

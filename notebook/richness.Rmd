@@ -11,12 +11,8 @@ A workflow for creating dummy forecasts for NEON carabid species richness
 3) Random walk dummy forecast 
 
 ```{r, message=F}
-library(neonUtilities)
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(stringr) #word()
-library(lubridate)
+library(neonstore)
+library(tidyverse)
 ```
 
 #### Load data
