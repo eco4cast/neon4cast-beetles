@@ -6,23 +6,45 @@ output:
 ---
 
 
-```{r setup, message=FALSE}
+This document illustrates the sequential steps for posing, producing and scoring a forecast for the community ecology challenge:
+
+1. Download NEON beetle data
+2. Clean / process data into (a) richness and (b) catch-per-unit-effort (CPUE) data products which teams will seek to predict future values for
+3. Generate a dummy (null) probablistic forecast at each site, using historical mean and standard deviations,
+4. Score the dummy forecast
+
+This document also shows one approach to capturing, sharing, and 'registering' the products associated with each step (raw data, processed data, forecast, scores),
+with content-based identifiers.  These identifiers can act like DOIs but can be computed directly from the data, and thus can be generated locally at no cost, no 
+authentication, and no lock-in to a specific storage provider.
+
+
+
+```{r setup, message=FALSE, warning=FALSE}
 library(tidyverse)
+
+# Helper libraries for one way of managing downloads and registering products; not essential.
 library(neonstore) # remotes::install_github("cboettig/neonstore")
 library(contentid) # remotes::install_github("cboettig/contentid")
 
+## Two helper functions are provided in external scripts
+source("R/resolve_taxonomy.R")
+source("R/publish.R")
+
+## neonstore can cache raw data files for future reference
 Sys.setenv("NEONSTORE_HOME" = "cache/")
 
 ## Set the year of the prediction.  This will be excluded from the training data and used in the forecast
 forecast_year <- 2019
 ```
 
-# Download data
+## Download data
+
+This example uses `neonstore` to download and manage raw files locally.
 
 ```{r}
-## full API queries take ~ 2m
-## full download takes ~ 5m on Jetstream
-start_date <- NA # Update to most recent download, or NA to get all
+## full API queries take ~ 2m.  
+## full download takes ~ 5m (on Jetstream)
+start_date <- NA # Update to most recent download, or NA to check all.
 neonstore::neon_download(product="DP1.10022.001", start_date = start_date)
 ```
 
@@ -36,14 +58,32 @@ expert <- neon_read("bet_expertTaxonomistIDProcessed", altrep = FALSE)
 field <- neon_read("bet_fielddata", altrep = FALSE)
 ```
 
-## Process data
-
-Resolve taxonomy using the expert and parataxonomist classification where available.  
-
-For convenience, we also add month and year as separate columns from the collectDate, allowing for easy grouping.
+Publish the index of all raw data files we have used, including their `md5sum`, for future reference.
+While these files are available from NEON and the local cache, this should help us detect any changes
+in the raw data, if need be. 
 
 ```{r}
-source("R/taxonomy.R")
+raw_file_index <- neon_index(product="DP1.10022.001", hash = "md5")
+readr::write_csv(raw_file_index, "products/raw_file_index.csv")
+
+publish("products/raw_file_index.csv")
+```
+
+
+
+## Process data
+
+First, we resolve the taxonomy using the expert and parataxonomist classification, where available.  Because these
+products lag behind initial identification of the `sorting` table, and because the sorting technicians do not pin
+all samples (either because they are confident in the classification already, or sample is damaged, etc), not all
+beetles will have expert identification.  Those with taxonomist identification will have an `individualID` assigned.
+Those with expert identification will also name the expert.  Then, samples identified as non-carabids (by either
+the technicians or the taxonomists) are excluded from the dataset.
+
+
+For convenience, we also add month and year as separate columns from the `collectDate`, allowing for easy grouping.
+
+```{r message = FALSE}
 beetles <- resolve_taxonomy(sorting, para, expert) %>% 
   mutate(month = lubridate::month(collectDate, label=TRUE),
          year =  lubridate::year(collectDate))
@@ -53,10 +93,10 @@ beetles <- resolve_taxonomy(sorting, para, expert) %>%
 
 ## Generate derived richness product
 
-Focuses on `taxonID` as the unit of taxonomy, which corresponds to best resolved scientific name.  Use `morphospecies` to focus on species-level (binomal names only),
-using morphospecies where available and where official classification was only resolved to a higher rank. 
+This example focuses on `taxonID` as the unit of taxonomy, which corresponds to best resolved scientific name.  Use `morphospecies` to focus on species-level (binomal names only),
+using morphospecies where available and where official classification was only resolved to a higher rank. The latter results in higher observed richness.
 
-```{r}
+```{r message = FALSE}
 richness <- beetles %>%  
   select(taxonID, siteID, collectDate, month, year) %>%
   distinct() %>%
@@ -67,10 +107,10 @@ richness
 
 ## Generate derived CPUE product
 
-We target a catch-per-unit-effort (CPUE) metric for abundance, e.g. to avoid the problem of having contestants have to predict the number of trap nights there will be.  (Quite a warranted concern for 2020!  Overall variability is over 30%, while 2018 & 2019 it is 22%.)  This does suggest the assumption that trapnights are exchangable, but teams accounting for things like weather on each night could still forecast raw counts and then convert their forecast to this simpler metric.  
+We target a catch-per-unit-effort (CPUE) metric for abundance, e.g. to avoid the problem of having contestants have to predict the number of trap nights there will be.  (Quite a warranted concern for 2020!  Overall variability is over 30%, while 2018 & 2019 it is 22%.)  This does suggest the assumption that trapnights are exchangeable, but teams accounting for things like weather on each night could still forecast raw counts and then convert their forecast to this simpler metric.  
 
 
-```{r}
+```{r message = FALSE}
 effort <- field %>% 
   group_by(siteID, collectDate) %>% 
   summarize(trapnights = as.integer(sum(collectDate - setDate)))
@@ -89,14 +129,17 @@ cpue <- counts %>%
 cpue 
 ```
 
-## Register (publish) derived products
+## Publish the derived data products
+
+Our first product is the derived data for `richness` and `cpue`.  We write the files to disk and publish them under 
+content-based identifier.  Using <https://hash-archive.org> or `contentid::resolve()`, we could then later resolve these IDs.  
 
 ```{r}
 readr::write_csv(richness, "products/richness.csv")
 readr::write_csv(cpue, "products/cpue.csv")
 
-contentid::content_id("products/richness.csv")
-contentid::content_id("products/cpue.csv")
+
+publish(c("products/richness.csv", "products/cpue.csv"))
 ```
 
 
@@ -137,15 +180,14 @@ null_cpue <- cpue %>%
 ```
 
 
-### Register (publish) the forecast
+## Publish the forecast products
 
 
 ```{r}
 readr::write_csv(null_richness, "products/richness_forecast.csv")
 readr::write_csv(null_cpue, "products/cpue_forecast.csv")
 
-contentid::content_id("products/richness_forecast.csv")
-contentid::content_id("products/cpue_forecast.csv")
+publish(c("products/richness_forecast.csv", "products/cpue_forecast.csv"))
 ```
 
 
@@ -199,39 +241,37 @@ cpue_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
 
 ```
 
-## Register / publish scores
+## Publish the scores
 
 
 ```{r}
 readr::write_csv(richness_score, "products/richness_score.csv")
 readr::write_csv(cpue_score, "products/cpue_score.csv")
 
-contentid::content_id("products/richness_score.csv")
-contentid::content_id("products/cpue_score.csv")
-```
-
-We can stick these data files anywhere convenient, as their content-based identifiers are location-independent.  If we put them somewhere public,
-we can then **register** that location to a hash archive, allowing us to automatically resolve the identifier later.  If we later put that data
-in a **permanent archive**, we can register that location as well, and the resolver will be able to access it there even if the other copies 
-are eventually lost.  Throughout this, the identifier is unchanged. If the _content_ of any of these files is altered in any way, that will
-alter the identifier, which prevents post-hoc changes from going unnoticed.
-
-```{r eval=fs::file_exists("/minio/shared-data")}
-fs::dir_copy("products", "/minio/shared-data", overwrite = TRUE)
-files <- fs::path_rel(fs::dir_ls("products"))
-urls <- paste0("https://minio.thelio.carlboettiger.info/shared-data/", files)
-ids <- contentid::register(urls, "https://hash-archive.org")
-
-## Confirm:
-x <- contentid::resolve(ids[[1]])
-contentid::content_id(x)
-
-data.frame(files, ids)
+publish(c("products/richness_score.csv", "products/cpue_score.csv"))
 ```
 
 
 
+---
 
+## Retreiving products by identifier
+
+Note that publishing a product generates a content-based identifier (simply using the sha256 hash of the file).  If the file ever changes, so will this identifier.  
+We can access any of the files published above using the identifier.  Notably, this approach is angostic to the _location_ where the
+file is stored, and works well with the same file stored in many locations.  In particular, we may want to copy these files over
+to a permanent archive later.  By registering that as just another location for the same content, we can always use the same identifier.
+In this way, this approach is compatible with DOI-based archival repositories, but lets us separate the step of generating and 
+registering the files from permanently archiving them.  That way, we can generate millions of copies locally (i.e. in debugging our forecast)
+but not worry about writing junk to permanent storage before we are ready to do so. 
+
+```{r message=FALSE}
+
+## Now anyone can later resolve these identifiers to download the content, e.g.  
+richness_forecast_csv <- contentid::resolve("hash://sha256/92af71bd4837a6720794582b1e7b8970d0f57bf491be4a51e67c835802005960")
+richness_forecast <- read_csv(richness_forecast_csv)
+
+```
 
 
 
