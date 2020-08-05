@@ -54,10 +54,14 @@ neonstore::neon_download(product="DP1.10022.001", start_date = start_date)
 
 ``` r
 library(neonstore)
-sorting <- neon_read("bet_sorting", altrep = FALSE)
-para <- neon_read("bet_parataxonomistID", altrep = FALSE)
-expert <- neon_read("bet_expertTaxonomistIDProcessed", altrep = FALSE)
-field <- neon_read("bet_fielddata", altrep = FALSE)
+
+sorting <- neon_read("bet_sorting", altrep = FALSE) %>% distinct()
+para <- neon_read("bet_parataxonomistID", altrep = FALSE) %>% distinct()
+expert <- neon_read("bet_expertTaxonomistIDProcessed", altrep = FALSE) %>% distinct()
+field <- neon_read("bet_fielddata", altrep = FALSE) %>% distinct()
+
+# vroom altrep is faster but we have too many files here!    
+# NEON sometimes provides duplicate files with different filename metadata (timestamps), so I am currently using `distinct()` to deal with that...
 ```
 
 Publish the index of all raw data files we have used, including their
@@ -189,7 +193,7 @@ publish(c("products/richness.csv", "products/abund.csv"))
 ```
 
     ## [1] "hash://sha256/280700dbc825b9e87fe9e079172d70342e142913d8fb38bbe520e4b94bf11548"
-    ## [2] "hash://sha256/ed632710e6c602fc365461090f4010cc59fcc505f03242f44b875540bac528b0"
+    ## [2] "hash://sha256/d91535c5a520319fd1110aaf412fc15881405387a027ccfcb5198cd9b204fd29"
 
 ## Compute (null model) Forecasts
 

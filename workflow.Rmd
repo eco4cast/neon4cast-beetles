@@ -52,10 +52,15 @@ neonstore::neon_download(product="DP1.10022.001", start_date = start_date)
 
 ```{r message=FALSE}
 library(neonstore)
-sorting <- neon_read("bet_sorting", altrep = FALSE)
-para <- neon_read("bet_parataxonomistID", altrep = FALSE)
-expert <- neon_read("bet_expertTaxonomistIDProcessed", altrep = FALSE)
-field <- neon_read("bet_fielddata", altrep = FALSE)
+
+sorting <- neon_read("bet_sorting", altrep = FALSE) %>% distinct()
+para <- neon_read("bet_parataxonomistID", altrep = FALSE) %>% distinct()
+expert <- neon_read("bet_expertTaxonomistIDProcessed", altrep = FALSE) %>% distinct()
+field <- neon_read("bet_fielddata", altrep = FALSE) %>% distinct()
+
+# vroom altrep is faster but we have too many files here!    
+# NEON sometimes provides duplicate files with different filename metadata (timestamps), so I am currently using `distinct()` to deal with that...
+
 ```
 
 Publish the index of all raw data files we have used, including their `md5sum`, for future reference.
