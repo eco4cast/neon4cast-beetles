@@ -9,7 +9,7 @@ output:
 This document illustrates the sequential steps for posing, producing and scoring a forecast for the community ecology challenge:
 
 1. Download NEON beetle data
-2. Clean / process data into (a) richness and (b) catch-per-unit-effort (CPUE) data products which teams will seek to predict future values for
+2. Clean / process data into (a) observed richness and (b) a proxy for relative abundance, (counts/trapnight), data products which teams will seek to predict future values for
 3. Generate a dummy (null) probablistic forecast at each site, using historical mean and standard deviations,
 4. Score the dummy forecast
 
@@ -105,7 +105,7 @@ richness <- beetles %>%
 richness
 ```
 
-## Generate derived CPUE product
+## Generate derived abundance product
 
 We target a catch-per-unit-effort (CPUE) metric for abundance, e.g. to avoid the problem of having contestants have to predict the number of trap nights there will be.  (Quite a warranted concern for 2020!  Overall variability is over 30%, while 2018 & 2019 it is 22%.)  This does suggest the assumption that trapnights are exchangeable, but teams accounting for things like weather on each night could still forecast raw counts and then convert their forecast to this simpler metric.  
 
@@ -116,30 +116,31 @@ effort <- field %>%
   summarize(trapnights = as.integer(sum(collectDate - setDate)))
   #summarize(trapnights = sum(trappingDays))  ## Has bunch of NAs this way
 
-counts <- beetles %>%  
-#  group_by(scientificName, collectDate, siteID) %>%
+counts <- sorting %>% 
+  mutate(month = lubridate::month(collectDate, label=TRUE),
+         year =  lubridate::year(collectDate)) %>%
   group_by(collectDate, siteID, year, month) %>%
     summarize(count = sum(individualCount, na.rm = TRUE))
 
-cpue <- counts %>% 
+abund <- counts %>% 
   left_join(effort) %>% 
-  mutate(cpue = count / trapnights) %>% ungroup()
+  mutate(abund = count / trapnights) %>% ungroup()
 
 
-cpue 
+abund 
 ```
 
 ## Publish the derived data products
 
-Our first product is the derived data for `richness` and `cpue`.  We write the files to disk and publish them under 
+Our first product is the derived data for `richness` and `abund`.  We write the files to disk and publish them under 
 content-based identifier.  Using <https://hash-archive.org> or `contentid::resolve()`, we could then later resolve these IDs.  
 
 ```{r}
 readr::write_csv(richness, "products/richness.csv")
-readr::write_csv(cpue, "products/cpue.csv")
+readr::write_csv(abund, "products/abund.csv")
 
 
-publish(c("products/richness.csv", "products/cpue.csv"))
+publish(c("products/richness.csv", "products/abund.csv"))
 ```
 
 
@@ -169,11 +170,11 @@ null_richness
 
 
 ```{r}
-null_cpue <- cpue %>% 
+null_abund <- abund %>% 
       filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
-  summarize(mean = mean(cpue, na.rm=TRUE),
-            sd = sd(cpue, na.rm=TRUE))  %>% 
+  summarize(mean = mean(abund, na.rm=TRUE),
+            sd = sd(abund, na.rm=TRUE))  %>% 
   mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
   mutate(year = forecast_year)
 
@@ -185,9 +186,9 @@ null_cpue <- cpue %>%
 
 ```{r}
 readr::write_csv(null_richness, "products/richness_forecast.csv")
-readr::write_csv(null_cpue, "products/cpue_forecast.csv")
+readr::write_csv(null_abund, "products/abund_forecast.csv")
 
-publish(c("products/richness_forecast.csv", "products/cpue_forecast.csv"))
+publish(c("products/richness_forecast.csv", "products/abund_forecast.csv"))
 ```
 
 
@@ -220,15 +221,15 @@ true_richness <- richness %>%
 richness_score <- score(null_richness, true_richness)
 ```
 
-Extract the true CPUE  for `r forecast_year` and compute score
+Extract the observed abundance measure (counts/trapnight) for `r forecast_year` and compute score
 
 
 ```{r message=FALSE}
-true_cpue <- cpue %>%
+true_abund <- abund %>%
   filter(year >= forecast_year) %>%
-  select(month, siteID, true = cpue)
+  select(month, siteID, true = abund)
 
-cpue_score <- score(null_cpue, true_cpue)
+abund_score <- score(null_abund, true_abund)
 ```
 
 
@@ -237,7 +238,7 @@ To avoid this, one option is to compute the mean score across sites:
 
 ```{r}
 richness_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
-cpue_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
+abund_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
 
 ```
 
@@ -246,9 +247,9 @@ cpue_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
 
 ```{r}
 readr::write_csv(richness_score, "products/richness_score.csv")
-readr::write_csv(cpue_score, "products/cpue_score.csv")
+readr::write_csv(abund_score, "products/abund_score.csv")
 
-publish(c("products/richness_score.csv", "products/cpue_score.csv"))
+publish(c("products/richness_score.csv", "products/abund_score.csv"))
 ```
 
 

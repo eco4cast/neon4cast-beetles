@@ -5,9 +5,9 @@ This document illustrates the sequential steps for posing, producing and
 scoring a forecast for the community ecology challenge:
 
 1.  Download NEON beetle data
-2.  Clean / process data into (a) richness and (b) catch-per-unit-effort
-    (CPUE) data products which teams will seek to predict future values
-    for
+2.  Clean / process data into (a) observed richness and (b) a proxy for
+    relative abundance, (counts/trapnight), data products which teams
+    will seek to predict future values for
 3.  Generate a dummy (null) probablistic forecast at each site, using
     historical mean and standard deviations,
 4.  Score the dummy forecast
@@ -128,7 +128,7 @@ richness
     ## 10 ABBY   2017-08-09  Aug    2017    11
     ## # … with 2,178 more rows
 
-## Generate derived CPUE product
+## Generate derived abundance product
 
 We target a catch-per-unit-effort (CPUE) metric for abundance, e.g. to
 avoid the problem of having contestants have to predict the number of
@@ -144,51 +144,52 @@ effort <- field %>%
   summarize(trapnights = as.integer(sum(collectDate - setDate)))
   #summarize(trapnights = sum(trappingDays))  ## Has bunch of NAs this way
 
-counts <- beetles %>%  
-#  group_by(scientificName, collectDate, siteID) %>%
+counts <- sorting %>% 
+  mutate(month = lubridate::month(collectDate, label=TRUE),
+         year =  lubridate::year(collectDate)) %>%
   group_by(collectDate, siteID, year, month) %>%
     summarize(count = sum(individualCount, na.rm = TRUE))
 
-cpue <- counts %>% 
+abund <- counts %>% 
   left_join(effort) %>% 
-  mutate(cpue = count / trapnights) %>% ungroup()
+  mutate(abund = count / trapnights) %>% ungroup()
 
 
-cpue 
+abund 
 ```
 
-    ## # A tibble: 2,188 x 7
-    ##    collectDate siteID  year month count trapnights   cpue
+    ## # A tibble: 2,280 x 7
+    ##    collectDate siteID  year month count trapnights  abund
     ##    <date>      <chr>  <dbl> <ord> <dbl>      <int>  <dbl>
     ##  1 2013-07-01  CPER    2013 Jul       1         14 0.0714
-    ##  2 2013-07-03  CPER    2013 Jul    2379        560 4.25  
-    ##  3 2013-07-10  STER    2013 Jul      35        112 0.312 
-    ##  4 2013-07-15  HARV    2013 Jul      87        238 0.366 
-    ##  5 2013-07-16  HARV    2013 Jul      47        189 0.249 
-    ##  6 2013-07-17  CPER    2013 Jul    4996        560 8.92  
-    ##  7 2013-07-24  STER    2013 Jul      56        168 0.333 
-    ##  8 2013-07-29  HARV    2013 Jul      20        154 0.130 
-    ##  9 2013-07-30  HARV    2013 Jul      70        224 0.312 
-    ## 10 2013-07-31  CPER    2013 Jul    2445        560 4.37  
-    ## # … with 2,178 more rows
+    ##  2 2013-07-02  DSNY    2013 Jul       0        560 0     
+    ##  3 2013-07-03  CPER    2013 Jul     173        560 0.309 
+    ##  4 2013-07-10  STER    2013 Jul      13        112 0.116 
+    ##  5 2013-07-11  OSBS    2013 Jul       0        560 0     
+    ##  6 2013-07-15  HARV    2013 Jul      51        238 0.214 
+    ##  7 2013-07-16  DSNY    2013 Jul       0        448 0     
+    ##  8 2013-07-16  HARV    2013 Jul      29        189 0.153 
+    ##  9 2013-07-17  CPER    2013 Jul     276        560 0.493 
+    ## 10 2013-07-17  DSNY    2013 Jul       0         60 0     
+    ## # … with 2,270 more rows
 
 ## Publish the derived data products
 
-Our first product is the derived data for `richness` and `cpue`. We
+Our first product is the derived data for `richness` and `abund`. We
 write the files to disk and publish them under content-based identifier.
 Using <https://hash-archive.org> or `contentid::resolve()`, we could
 then later resolve these IDs.
 
 ``` r
 readr::write_csv(richness, "products/richness.csv")
-readr::write_csv(cpue, "products/cpue.csv")
+readr::write_csv(abund, "products/abund.csv")
 
 
-publish(c("products/richness.csv", "products/cpue.csv"))
+publish(c("products/richness.csv", "products/abund.csv"))
 ```
 
-    ## [1] "hash://sha256/d094e57fe31efdb5004ba2d749d2bab3dc174ed0902ff3cab04fd1d82ca3a514"
-    ## [2] "hash://sha256/902d92f1bad555f35cf8dcf25e98039c350a613e07a01740755725f6fa2d2422"
+    ## [1] "hash://sha256/280700dbc825b9e87fe9e079172d70342e142913d8fb38bbe520e4b94bf11548"
+    ## [2] "hash://sha256/ed632710e6c602fc365461090f4010cc59fcc505f03242f44b875540bac528b0"
 
 ## Compute (null model) Forecasts
 
@@ -237,11 +238,11 @@ null_richness
     ## # … with 260 more rows
 
 ``` r
-null_cpue <- cpue %>% 
+null_abund <- abund %>% 
       filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
-  summarize(mean = mean(cpue, na.rm=TRUE),
-            sd = sd(cpue, na.rm=TRUE))  %>% 
+  summarize(mean = mean(abund, na.rm=TRUE),
+            sd = sd(abund, na.rm=TRUE))  %>% 
   mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
   mutate(year = forecast_year)
 ```
@@ -252,13 +253,13 @@ null_cpue <- cpue %>%
 
 ``` r
 readr::write_csv(null_richness, "products/richness_forecast.csv")
-readr::write_csv(null_cpue, "products/cpue_forecast.csv")
+readr::write_csv(null_abund, "products/abund_forecast.csv")
 
-publish(c("products/richness_forecast.csv", "products/cpue_forecast.csv"))
+publish(c("products/richness_forecast.csv", "products/abund_forecast.csv"))
 ```
 
-    ## [1] "hash://sha256/92af71bd4837a6720794582b1e7b8970d0f57bf491be4a51e67c835802005960"
-    ## [2] "hash://sha256/8fb07ad34fe4100546479cb34abf4ee1b5cfd015591cd84a77a3e7fd0d88cf4d"
+    ## [1] "hash://sha256/93e741a4ff044319b3288d71c71d4e95a76039bc3656e252621d3ad49ccc8200"
+    ## [2] "hash://sha256/4ff740ac7b0b63b1cc8d102f29d55acb924c3cbfeef67b80c32eefeb590b5bba"
 
 ## Score the forecast
 
@@ -285,14 +286,15 @@ true_richness <- richness %>%
 richness_score <- score(null_richness, true_richness)
 ```
 
-Extract the true CPUE for 2019 and compute score
+Extract the observed abundance measure (counts/trapnight) for 2019 and
+compute score
 
 ``` r
-true_cpue <- cpue %>%
+true_abund <- abund %>%
   filter(year >= forecast_year) %>%
-  select(month, siteID, true = cpue)
+  select(month, siteID, true = abund)
 
-cpue_score <- score(null_cpue, true_cpue)
+abund_score <- score(null_abund, true_abund)
 ```
 
 Note that removing `NA`s in a sum of scores is unfair, as “0” reflects a
@@ -309,26 +311,25 @@ richness_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
     ## 1      -3.44
 
 ``` r
-cpue_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
+abund_score %>% summarize(mean_score = mean(score, na.rm= TRUE))
 ```
 
     ## # A tibble: 1 x 1
     ##   mean_score
     ##        <dbl>
-    ## 1      -138.
+    ## 1      -11.1
 
 ## Publish the scores
 
 ``` r
 readr::write_csv(richness_score, "products/richness_score.csv")
-readr::write_csv(cpue_score, "products/cpue_score.csv")
+readr::write_csv(abund_score, "products/abund_score.csv")
 
-publish(c("products/richness_score.csv", "products/cpue_score.csv"))
+publish(c("products/richness_score.csv", "products/abund_score.csv"))
 ```
 
-
-    ## [1] "hash://sha256/4976c4c8c952c82676f81ee4abf6b18c0908692f37cd52fb1b524d646d2259e7"
-    ## [2] "hash://sha256/29bd155f83d553430dbe38a10e80998855206698e89a641b6d868f6ec1f8d6f5"
+    ## [1] "hash://sha256/2f4fc07ab698d6e9ba1ee09c5448d840dfc565a82a4f273f7b8c4175a0b61d85"
+    ## [2] "hash://sha256/596b4d38d8388176ed0eac47f6ed09c62f6514922ec8feda08c7bc8a36f62ca7"
 
 -----
 
@@ -354,4 +355,3 @@ junk to permanent storage before we are ready to do so.
 richness_forecast_csv <- contentid::resolve("hash://sha256/92af71bd4837a6720794582b1e7b8970d0f57bf491be4a51e67c835802005960")
 richness_forecast <- read_csv(richness_forecast_csv)
 ```
-
