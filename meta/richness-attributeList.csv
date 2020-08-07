@@ -1,0 +1,10 @@
+attributeName,     attributeDefinition,                   unit,    formatString, numberType, definition,
+collectDate,       date traps were collected at site,      NA,      YYYY-MM-DD,  NA,         NA,
+siteID,            NEON site identifier,                   NA,          NA,      NA,         four-character site code,
+n,                 species richness,                 dimensionless,     NA,      integer,    NA,
+mean,              mean predicted richness,          dimensionless,     NA,      real,       NA,
+sd    standard deviation for predicted richness,    dimensionless,      NA,      real,       NA,
+month,   month trap collected (text label),                NA,          NA,      NA,         month as a categorical label, e.g. Jun, Jul, etc,
+year,    year trap was/will be collected,                  NA,         YYYY,     NA,         NA,
+true, true observed richness (used to score forecast),  dimensionless,  NA,      integer,    NA,
+score,   numeric score computed for prediction,       dimensionless,    NA,      real,       NA
