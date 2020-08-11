@@ -41,12 +41,12 @@ field_data <- bet_fielddata %>%
 
 #### sorting, filtering, and ID
 * After collection, the samples are separated into carabids and bycatch (both vert and other invert) and subsequently, carabids samples are identified at multiple levels of expertise. 
-* Sorted & IDed by field tech $\rightarrow$ subset of sorted  pinned (parataxonomist) and re-IDed $\rightarrow$ subset of pinned to expert taxonomists $\rightarrow$ subset to DNA bardocing
+* Sorted & IDed by field tech &rarr; subset of sorted  pinned (parataxonomist) and re-IDed &rarr; subset of pinned to expert taxonomists &rarr; subset to DNA bardocing
 * Taxonomic expert's ID overrides identifications by the sorter and pinner.  
 * Abundances are recorded by the sorting technician on the original sample and are not preserved across the different levels of ID. 
-* For example, a sample of 200 individuals IDed as species A was sent to the pinner. Pinner IDs two new species (B and C) within that sample. Likewise, the     expert validates A, B, and C and adds two more species D and E. Neither expert nor parataxonomist record which individuals are B, C, D, and E. We have to     assume that only a single individual was identified for each of those new species, and the remaining individuals were correctly identified originally. 
+* For example, a sample of 200 individuals IDed as species A was sent to the pinner. Pinner IDs two new species (B and C) within that sample. Likewise, the expert validates A, B, and C and adds two more species D and E. Neither expert nor parataxonomist record which individuals are B, C, D, and E. We have to assume that only a single individual was identified for each of those new species, and the remaining individuals were correctly identified originally. 
     * abundance for species B, C, D, E = 1
-    * $Abundance$ $of$ $species$ $A$ $=$ $Relative$ $abundance$ $documented$ $by$ $sorting$ $tech$ $-$ $No$ $of$ $new$ $species$ $IDed$ by $pinner$ $and$ $expert$
+    * *Abundance of species A* = *Relative abundance documented by sorting tech - No. of new species IDed by pinner and expert*
       *   $200 - (2+2)$
 
     
