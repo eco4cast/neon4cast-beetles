@@ -1,12 +1,4 @@
 
----
-title: "EFI carabids data format, structure, and issues"
-author: "EFI carabid challenge team"
-date: "7/21/2020"
-output: html_document
----
-
-
 ### NEON data product DP1.0022.001: [Ground beetles sampled from pitfall traps](https://data.neonscience.org/data-products/DP1.10022.001)
 
 This is a brain dump with helpful information for understanding NEON's carabid data products, from experimental design to data structure
