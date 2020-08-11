@@ -1,4 +1,4 @@
-abundance
+richness
 ================
 Carl Boettiger
 2020-07-21
