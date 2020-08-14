@@ -249,7 +249,21 @@ sum(bet_sorting %>%
     filter(sampleType == "carabid" | sampleType == "other carabid") %>% pull(individualCount), na.rm=T)
 #3203 individual beetles out of 159450 total individuals have a subspecies ID that if share a species ID with another subspecies
 
-# There are several subspecies that pool 
+# Are taxonIDs unique to the species-level?
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>% 
+    mutate(scientificName_sp = ifelse(taxonRank=="subspecies",
+                                      word(scientificName, 1, 2, sep=" "), scientificName)) %>%
+  filter(taxonRank=="subspecies") %>% select(scientificName, scientificName_sp, taxonID) %>%
+  distinct() %>% arrange(taxonID)
+# No, they are unique to the subspecies level
+
+# Are taxonIDs distinguished between morphospecies?
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid",
+           !is.na(morphospeciesID)) %>% 
+  select(scientificName, morphospeciesID, taxonID) %>%
+  distinct() %>% arrange(taxonID)
 
 ```
 #### Clean
