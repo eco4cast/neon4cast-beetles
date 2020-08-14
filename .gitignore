@@ -5,3 +5,5 @@
 *.Rproj
 *.html
 data/*.zip
+cache
+products

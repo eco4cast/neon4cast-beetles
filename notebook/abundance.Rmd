@@ -1,0 +1,125 @@
+---
+title: "abundance"
+author: "Anna Spiers"
+date: "7/9/2020"
+output: html_document
+---
+
+A workflow for creating dummy forecasts for NEON carabid abundance.  
+1) EDA   
+2) Average baseline dummy forecast  
+3) Random walk dummy forecast 
+
+```{r, message=F}
+library(neonUtilities)
+library(ggplot2)
+library(dplyr)
+library(stringr) #word()
+library(lubridate)
+```
+
+#### Load data
+
+```{r}
+# dataframe with comprehensive information - more than is needed for forecasting abundance
+carabid_clean <- readRDS("data/carabid_clean.rds") 
+# Each row has a unique subsampleID. the individualCount column reports the raw count 
+# of individuals for a subsample (taxon per trap per collectDate)
+
+# dataframe with information related to forecasting abundance only
+carabid_count <- carabid_clean %>%
+    select(siteID, sampleID, collectDate, col_DOY, col_month, col_year, individualCount, trapnights) %>%
+    group_by(siteID, collectDate, trapnights) %>%
+    summarize(totalCount = sum(individualCount))
+```
+
+#### EDA
+
+See [Carl's script](https://github.com/boettiger-lab/neon-forecast/blob/master/abundance/beetles.Rmd) exploring abundance, particularly raw count vs abundance, for more information.
+
+Count at each site across collection bouts
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, 
+           individualCount, sampleID, subsampleID) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           col_DOY = yday(collectDate),
+           year = as.character(year(collectDate))) %>%
+    group_by(siteID, year, col_DOY) %>%
+    summarize(n=sum(individualCount)) %>%
+    ggplot() + 
+        geom_line(aes(x=col_DOY, y=n, col=year)) +
+    facet_wrap(~siteID)
+```
+
+Count at each site across years
+```{r}
+bet_sorting %>%
+    filter(sampleType == "carabid" | sampleType == "other carabid") %>%
+    select(domainID, siteID, plotID, trapID, setDate, collectDate, 
+           individualCount, sampleID, subsampleID) %>%
+    mutate(plot_trap = paste0(plotID, "_", trapID, sep=""),
+           trapnight = as.numeric(collectDate - setDate, units="days"),
+           year = year(collectDate)) %>%
+    group_by(siteID, year) %>%
+    summarize(n=sum(individualCount)) %>%
+    ggplot(aes(x=year, y=n)) + 
+        geom_line() +
+    facet_wrap(~siteID)
+```
+
+
+
+
+
+
+
+
+
+
+####Average baseline dummy forecast  
+
+```{r}
+
+mnCarabid <- carabid_count %>%
+	group_by(siteID) %>% 
+	summarise(mnAbund=mean(totalCount, na.rm=TRUE), 
+		mnTrapNight=mean(trapnights, na.rm=TRUE), 
+		mnSAbund=mean(totalCount/trapnights, na.rm=TRUE), 
+		sdAbund=sd(totalCount, na.rm=TRUE),
+		sdSabund=sd(totalCount/trapnights, na.rm=TRUE))
+
+```
+
+
+
+
+
+
+
+
+#### Random walk dummy forecast 
+
+```{r}
+
+rwCarabid <- carabid_count %>%
+	group_by(siteID) %>% 
+	summarise(rw.mnAbund=mean(totalCount[which.max(collectDate)], na.rm=TRUE), 
+		rw.TrapNight=mean(trapnights[which.max(collectDate)], na.rm=TRUE), 
+		rw.SAbund=mean(totalCount[which.max(collectDate)]/
+			trapnights[which.max(collectDate)], na.rm=TRUE), 
+		rw.sdAbund=sd(totalCount[which.max(collectDate)]),
+		rw.sdSabund=sd(totalCount[which.max(collectDate)]/
+			trapnights[which.max(collectDate)], na.rm=TRUE)
+	) 
+
+
+```
+
+
+
+
+
+

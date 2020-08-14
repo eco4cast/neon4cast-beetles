@@ -1,0 +1,209 @@
+---
+title: "taxonomy"
+author: "Carl Boettiger"
+date: "2020-07-21"
+output: 
+  github_document:
+    df_print: tibble
+---
+
+
+```{r setup, message=F}
+library(dplyr)
+expert <- readRDS("data/bet_expert.rds")
+para <- readRDS("data/bet_parataxonomist.rds")
+sorting <- readRDS("data/bet_sorting.rds")
+```
+
+```{r}
+
+## NA scientificName.y means it wasn't pinned bc sorter was confident in ID, so we stick with that
+## Otherwise, we go with the expert's decision.  
+## IDs based on pinned taxonomy have an individualID, if ID comes only from sorting and wasn't pinned, individualID is NA.
+taxonomy <-
+  left_join(sorting, para, by = "subsampleID")  %>% 
+  left_join(expert, by = "individualID") %>%
+  mutate(taxonRank = ifelse(is.na(taxonRank), taxonRank.x, taxonRank),
+         scientificName = ifelse(is.na(scientificName), scientificName.x, scientificName),
+         taxonID = ifelse(is.na(taxonID), taxonID.x, taxonID),
+         morphospeciesID =  ifelse(is.na(morphospeciesID), morphospeciesID.x, morphospeciesID)) %>%
+  select(-ends_with(".x"), -ends_with(".y"))
+
+## Use morphospecies if available for higher-rank-only classifications,
+## Otherwise, binomialize the scientific name:
+taxonomy <- taxonomy %>% 
+  mutate(species = 
+           ifelse(taxonRank %in% c("subgenus", "genus", "family", "order") & !is.na(morphospeciesID), 
+                  morphospeciesID,
+                  taxadb::clean_names(scientificName)
+                  )
+         )
+
+## Beetles must be identified as carabids by both sorting table and the taxonomists (~3 non-Carabidae slip through in sorting)
+beetles <- taxonomy %>% 
+  filter(grepl("carabid", sampleType)) %>%
+  filter(family == "Carabidae" | is.na(family))
+
+
+beetles %>% count(species) # 822
+beetles %>% count(taxonID) # 747
+beetles %>% count(scientificName) # 747
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Exploratory analyses
+
+
+
+
+
+```{r}
+no_pin <- anti_join(sorting, para, by = "subsampleID")
+no_pin %>% filter(grepl("carabid", sampleType))  %>% count(taxonRank)
+## 347 subsamples had beetle(s) that could not be ID'd to species level but were not pinned due to issues (e.g. too small, head missing, etc)
+## Other not-pinned stuff ain't carabids (though a few pinned things turn out not to be carabids either...)
+no_pin %>% filter(grepl("carabid", sampleType))  %>% filter(taxonRank %in% c("genus", "family"))
+
+
+
+## Everything the experts ID to family has a specificEpithet.
+taxonomy # 163,793
+taxonomy  %>% filter(grepl("carabid", sampleType)) # 91,594
+taxonomy  %>% filter(grepl("carabid", sampleType)) %>% count(taxonRank)
+taxonomy %>% filter(grepl("carabid", sampleType), family != "Carabidae")  ## 41 aren't actually carabids
+
+
+
+
+taxonomy %>% filter(grepl("carabid", sampleType)) %>% filter(taxonRank %in% c("subgenus", "genus", "family", "order")) %>% filter(!is.na(morphospeciesID)) # 2,306 have morphospeciesID
+taxonomy %>% filter(grepl("carabid", sampleType)) %>% filter(taxonRank %in% c("subgenus", "genus", "family", "order")) %>% filter(is.na(morphospeciesID))  %>% count(taxonRank) # 1,715 do not
+
+taxonomy %>% filter(family == "Carabidae")  # 41,705
+
+taxonomy %>% filter(taxonRank %in% c("genus", "family"),  !is.na(morphospeciesID) ) # 1.9K
+taxonomy %>% filter(taxonRank %in% c("genus", "family"),  is.na(morphospeciesID) )  # 1.7K
+
+taxonomy %>%  filter(taxonRank %in% c("genus", "family"),  is.na(morphospeciesID) ) %>% filter(is.na(specificEpithet), family == "Carabidae")
+
+```
+
+
+
+```{r}
+taxonomy %>% count(taxonRank)
+## Some things identified as carabid family in sorting table aren't so, according to experts
+taxonomy %>% filter(taxonRank %in% c("order", "phylum")) %>% select(scientificName, taxonRank, sampleType)
+## Sometimes experts give two different ids to the same individual... probably a data entry problem?
+expert %>% 
+    group_by(individualID) %>% 
+    filter(n_distinct(taxonID) > 1) %>% inner_join(expert) %>% 
+  select(taxonID, taxonRank, scientificName, identifiedBy, identifiedDate, identificationQualifier, identificationReferences, scientificNameAuthorship, laboratoryName)
+```
+
+
+```{r}
+A <- left_join(sorting, para, by = "subsampleID")  %>% 
+  left_join(expert, by = "individualID") %>%
+  filter(collectDate.x > as.Date("2017-01-01"))
+
+## Only 260                                                                     
+A %>% 
+  filter(scientificName.x != scientificName.y) %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, collectDate.x, scientificName, taxonRank)
+
+## only 62
+A %>% 
+  filter(scientificName.x != scientificName.y, is.na(scientificName)) %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, collectDate.x, scientificName, taxonRank)
+
+## Only inverts / bycatch have no sci name in sample table.  
+A %>% filter(is.na(scientificName.x)) %>% count(sampleType)
+
+
+## ~ 4K                                                                
+A %>% 
+  filter(scientificName.x != scientificName) %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, collectDate.x, scientificName, taxonRank)
+
+
+## ~ 4K                                                                
+A %>% 
+  filter(scientificName.y != scientificName) %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, collectDate.x, scientificName, taxonRank)
+
+
+
+matches <- A %>% 
+  filter(scientificName.x == scientificName.y) %>% pull(subsampleID)
+
+
+A %>% filter(subsampleID != matches)   %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, subsampleID) %>%
+  filter(is.na(scientificName.y), !is.na(scientificName.x))
+
+
+A %>% filter(subsampleID != matches)   %>% 
+  select(scientificName.x, taxonRank.x, scientificName.y, taxonRank.y, subsampleID) %>%
+  filter(is.na(scientificName.y), !is.na(scientificName.x)) %>% select(subsampleID) %>% inner_join(para)
+
+
+A %>% 
+  #filter(collectDate.x > as.Date("2017-01-01")) %>%
+  pull(subsampleID) %>% length() - n_matches
+```
+
+
+Observe that `subsampleID` is unique in the sorting table, and is also found in the parataxonomy table (where it is not unique)
+
+```{r}
+sorting %>% count(subsampleID, sort = TRUE) # most frequent occurrence of any id is 1
+```
+
+
+This makes it a good key value to join on.  Note we *MUST NOT* join on the other columns, which can differ between the tables!
+
+
+Observe that many species that could not be identified by the sorters have been identified by the para-taxonomists (and thus do not get a morpho-species assigned by the parataxonomist.)  Note that the `.x` indicates a column from the sorting table, and the `y` from the parataxonomy table.  
+
+```{r}
+taxa <- sorting %>% left_join(para, by = "subsampleID")
+taxa %>% select(scientificName.x, scientificName.y, morphospeciesID.x, morphospeciesID.y, taxonID.x, taxonID.y, taxonRank.x, taxonRank.y)
+```
+
+How many species of carabid did the sorting step fail to classify to at least the species level?
+
+```{r}
+taxa %>% filter(grepl("carabid", sampleType)) %>% count(taxonRank.x)
+
+unclassified <- taxa %>% 
+  filter(grepl("carabid", sampleType), 
+         taxonRank.x %in% c("family", "genus"))  %>% 
+  mutate(year = lubridate::year(collectDate.x))
+```
+
+Let's focus on those 8,974 unclassified beetles. How many have the not been classified by the parataxonomists?
+
+```{r}
+unclassified  %>%  count(taxonRank.x)
+```
+
+Of those 8,974, 3397 still remain unclassified at the family level, and another 1874 at the genus level (so about 41% were successfully identified).  But also note that the parataxonomists have been able to at least give morphospecies ids to nearly all (only 100 have no `morphospeciesID.y`, though some of these have `morphospeciesID.x` so possibly the parataxonomist was questing that call).  Also note that almost all of those have "remarks" with what looks to be a guess for the species ID (i.e. could be a good proxy for the morphospecies)
+
+```{r}
+unclassified %>% filter(taxonRank.y == "family", is.na(morphospeciesID.y)) %>% select(scientificName.y, remarks.y, year)
+```
+
+Joining on the expert table maybe more of these can be identified. 

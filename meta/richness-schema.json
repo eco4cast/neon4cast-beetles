@@ -1,0 +1,41 @@
+{
+  "@context": "http://schema.org/",
+  "@type": "Dataset",
+  "name": "richness.csv",
+  "description": "Carabid beetle species richness by siteID and collectDate across all NEON sites operating pitfall traps.",
+  "keywords": ["NEON", "community ecology", "ecology", "beetles"],
+  "license": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
+  "creator": {
+     "@type":"Person",
+     "@id": "https://orcid.org/0000-0002-1642-628X",
+     "name": "Carl Boettiger"
+  },
+  "distribution":[
+     {
+        "@type": "DataDownload",
+        "@id": "hash://sha256/280700dbc825b9e87fe9e079172d70342e142913d8fb38bbe520e4b94bf11548",
+        "contentUrl": "https://minio.thelio.carlboettiger.info/content-store/data/28/07/280700dbc825b9e87fe9e079172d70342e142913d8fb38bbe520e4b94bf11548",
+        "encodingFormat": "CSV"
+     }
+  ],
+  "temporalCoverage": "2013-07-01/2020-05-27",
+   "variableMeasured": [
+    {
+      "@type": "PropertyValue",
+      "name": "siteID",
+      "description": "NEON site code"
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "collectDate",
+      "description": "Date traps were collected",
+      "unitText": "YYYY-MM-DD"
+    },
+    {
+      "@type": "PropertyValue",
+      "name": "n",
+      "description": "observed species richness at site",
+      "unitText": "count"
+    }
+    ]
+}
