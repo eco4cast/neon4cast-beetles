@@ -271,7 +271,6 @@ resolve_taxonomy_kari <- function(sorting, para, expert){
     select(-ends_with(".x"), -ends_with(".y"))
   
   
-  ## CB: I don't think we need this. 
   #some subsamples weren't fully ID'd by the pinners, so we have to recover the unpinned-individuals
   lost_indv <- data_pin %>% 
     filter(!is.na(individualID)) %>%
