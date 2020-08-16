@@ -1,3 +1,23 @@
+creator <- list(individualName = list(givenName = "Carl", surName = "Boettiger"), 
+                id = "https://orcid.org/0000-0002-1642-628X")
+
+tables <- list(
+  list(file = "products/richness_forecast.csv", 
+       description = "Forecast of arabid beetle species richness
+          by siteID and collectDate across all NEON sites operating pitfall traps")
+)
+build_eml(title = "NEON Carabid Species Richness forecast", 
+          abstract = "Simple forecast of Carabid beetle species richness at
+                     each month at each NEON site for 2019, based on historical averages.", 
+          creator = creator, 
+          tables = tables)
+
+
+
+
+
+
+
 
 
 function(files, descriptions, creators){
