@@ -36,6 +36,9 @@ publish_dataone <- function(file){
   
 }
 
+
+
+
 # id <- "hash://md5/e27c99a7f701dab97b7d09c467acf468"
 resolve_dataone_id <- function(id, url_only = FALSE){
   
