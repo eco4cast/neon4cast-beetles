@@ -1,49 +1,69 @@
-creator <- list(individualName = list(givenName = "Carl", surName = "Boettiger"), 
-                id = "https://orcid.org/0000-0002-1642-628X")
-
-tables <- list(
-  list(file = "products/richness_forecast.csv", 
-       description = "Forecast of arabid beetle species richness
-          by siteID and collectDate across all NEON sites operating pitfall traps")
-)
-build_eml(title = "NEON Carabid Species Richness forecast", 
-          abstract = "Simple forecast of Carabid beetle species richness at
-                     each month at each NEON site for 2019, based on historical averages.", 
-          creator = creator, 
-          tables = tables)
 
 
 
 
 
+library(dataone)
+library(datapack)
+library(mime)
 
 
-
-
-function(files, descriptions, creators){
-
-  
-  
-  
-dp <- new("DataPackage")
-metadataObj <- new("DataObject", format="eml://ecoinformatics.org/eml-2.2.0", filename=emlFile)
-dp <- addMember(dp, metadataObj)
-
-sourceData 
-sourceObj <- new("DataObject", format="text/csv", filename=sourceData) 
-dp <- addMember(dp, sourceObj, metadataObj)
-
-progFile <- system.file("extdata/filterObs.R", package="dataone")
-progObj <- new("DataObject", format="application/R", filename=progFile, mediaType="text/x-rsrc")
-dp <- addMember(dp, progObj, metadataObj)
-
-outputData <- system.file("extdata/Strix-occidentalis-obs.csv", package="dataone")
-outputObj <- new("DataObject", format="text/csv", filename=outputData) 
-dp <- addMember(dp, outputObj, metadataObj)
-
-myAccessRules <- data.frame(subject=orcid, permission="changePermission") 
-
-d1c <- D1Client("STAGING", "urn:node:mnStageUCSB2")
-packageId <- uploadDataPackage(d1c, dp, public=TRUE, accessRules=myAccessRules, quiet=FALSE)
-
+dataone_node <- function(){
+  if(!is.null(getOption("dataone_test_token")))
+    return( dataone::D1Client("STAGING2", "urn:node:mnTestKNB") )
+  dataone::D1Client("PROD", "urn:node:KNB")
 }
+
+resolve_dataone <- function(id, url_only = FALSE){
+  d1c <-  dataone_node()
+  paste0(d1c@cn@baseURL, "/v2/resolve/", utils::URLencode(id, TRUE))
+}
+
+## Create a data object with content-based id and a sha-256 checksum
+data_object <- function(file, format = mime::guess_type(file), ...){
+  library(datapack)
+  hash <- paste0(openssl::sha256(file(file)))
+  id <- paste0("hash://sha256/", hash)
+  d1Object <- new("DataObject", id, format=mime::guess_type(file), filename=file, ...)
+  d1Object@sysmeta@checksum <- gsub("^hash://\\w+/", "", id)
+  d1Object@sysmeta@checksumAlgorithm <- "SHA-256"
+  d1Object
+}
+
+
+publish_dataone <- function(in_file, out_file, code, meta, orcid){
+
+  dp <- new("DataPackage")
+  meta_obj <- data_object(meta, "eml://ecoinformatics.org/eml-2.2.0")
+  in_obj <- data_object(in_file)
+  code_obj <- data_object(code, mediaType="text/x-rsrc")
+  out_obj <- data_object(out_file)
+  dp <- addMember(dp, meta)
+  dp <- addMember(dp, in_obj, meta)
+  dp <- addMember(dp, code_obj, meta)
+  dp <- addMember(dp,  out_obj, meta)
+  rules <- data.frame(subject=orcid, permission="changePermission") 
+  
+  ## Will uploadDataPackage use the id from the EML already?
+  packageId <- paste0("hash://sha256/",
+    openssl::sha256(paste(in_obj@sysmeta@identifier,
+                     code_obj@sysmeta@identifier,
+                     out_obj@sysmeta@identifier,
+                     sep="\n")))
+  
+  ## Perform the upload, requires authentication!
+  repo <- dataone_node()
+  id <- uploadDataPackage(repo, 
+                          dp, 
+                          packageId = packageId,
+                          public=TRUE, 
+                          accessRules=rules, 
+                          quiet=FALSE)
+  
+  ## Add prov metadata to uploaded package
+  dp <- describeWorkflow(dp, sources = in_obj, program = code_obj, 
+                         derivations = out_obj) 
+  
+  id
+}
+

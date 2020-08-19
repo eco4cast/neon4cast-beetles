@@ -1,0 +1,93 @@
+
+
+Helper functions
+
+```{r}
+source("R/meta.R")
+```
+
+
+Core metadata as list objects:
+
+```{r}
+authors <- list(list(individualName = list(givenName = "Carl", surName = "Boettiger"), 
+                id = "https://orcid.org/0000-0002-1642-628X"),
+                list(givenName = "Anna",  surName ="Spiers"),
+                list(givenName = "Tad", "Dallas"),
+                list(individualName = list(givenName = "Brett", surName = "Melbourne"))
+                )
+```
+
+```{r}
+tables <- list(
+  list(file = "products/richness.csv", 
+       description = "Measured carabid beetle species richness
+          by siteID and collectDate across all NEON sites operating pitfall traps"),
+  list(file = "products/richness_forecast.csv", 
+       description = "Forecast of carabid beetle species richness
+          by siteID and collectDate across all NEON sites operating pitfall traps")
+)
+```
+
+
+
+
+Pre-compute geographic coverage from NEON EML, generage taxonomic coverage
+
+```{r eval=FALSE}
+library(dplyr)
+library(jsonlite)
+library(EML)
+
+# 
+meta <- neonstore::neon_index(ext="xml", product = "DP1.10022.001")
+all <- lapply(meta$path, emld::as_emld)
+geo <- lapply(all, function(x) x$dataset$coverage$geographicCoverage)
+
+geo %>% toJSON() %>% fromJSON() %>% distinct() %>% write_json("carabid_geo.json")
+
+taxonomicCoverage <- EML::set_taxonomicCoverage(data.frame(Kingdom = "Animalia", Phylum="Insecta", Class = "Coleoptera", Family="Carabidae"))
+taxonomicCoverage %>% write_json("carabid_taxa.json")
+```
+
+Load the stored taxonomic and geographic coverage, compute current temporal coverage:
+
+```{r}
+
+richness <- vroom::vroom("products/richness.csv")
+startDate <- min(richness$collectDate)
+endDate <- max(richness$collectDate) # Or is this the forecast horizon
+temporalCoverage <- 
+              list(rangeOfDates =
+                list(beginDate = list(calendarDate = startDate),
+                     endDate = list(calendarDate = endDate)))
+                     
+
+geographicCoverage <- jsonlite::read_json("carabid_geo.json")
+taxonomicCoverage <-  jsonlite::read_json("carabid_taxa.json")
+
+coverage <- list(geographicCoverage = geographicCoverage,
+                 temporalCoverage = temporalCoverage,
+                 taxonomicCoverage = taxonomicCoverage)
+               
+```
+
+
+Now generate EML. Note that `attributesList` will be computed from the `vroom::spec` of the data files,
+which handles data types reasonably but is fast and loose on units.  Fortunately `dimensionless` is 
+okay for the count data included here. 
+
+```{r}
+build_eml(title = "NEON Carabid Species Richness forecast", 
+          abstract = "Simple forecast of Carabid beetle species richness at
+                     each month at each NEON site for 2019, based on historical averages.", 
+          creators = authors, 
+          contact_orcid = "https://orcid.org/0000-0002-1642-628X",
+          coverage = coverage,
+          tables = tables)
+```
+
+
+
+
+
