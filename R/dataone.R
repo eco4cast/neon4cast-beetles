@@ -25,6 +25,8 @@ data_object <- function(file, format = mime::guess_type(file), ...){
   hash <- paste0(openssl::sha256(file(file)))
   id <- paste0("hash://sha256/", hash)
   d1Object <- new("DataObject", id, format=mime::guess_type(file), filename=file, ...)
+  
+  ## Won't be needed once this is the new default, see https://github.com/DataONEorg/rdataone/issues/257
   d1Object@sysmeta@checksum <- gsub("^hash://\\w+/", "", id)
   d1Object@sysmeta@checksumAlgorithm <- "SHA-256"
   d1Object
@@ -43,7 +45,11 @@ publish_dataone <- function(in_file, out_file, code, meta, orcid){
   dp <- addMember(dp, code_obj, meta)
   dp <- addMember(dp,  out_obj, meta)
   rules <- data.frame(subject=orcid, permission="changePermission") 
-  
+
+  ## Add prov metadata to uploaded package
+  dp <- describeWorkflow(dp, sources = in_obj, program = code_obj, 
+                         derivations = out_obj)
+    
   ## Will uploadDataPackage use the id from the EML already?
   packageId <- paste0("hash://sha256/",
     openssl::sha256(paste(in_obj@sysmeta@identifier,
@@ -60,9 +66,7 @@ publish_dataone <- function(in_file, out_file, code, meta, orcid){
                           accessRules=rules, 
                           quiet=FALSE)
   
-  ## Add prov metadata to uploaded package
-  dp <- describeWorkflow(dp, sources = in_obj, program = code_obj, 
-                         derivations = out_obj) 
+
   
   id
 }
