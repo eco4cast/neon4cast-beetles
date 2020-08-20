@@ -29,7 +29,7 @@ build_eml <- function(title, abstract, creators, contact_orcid, tables = NULL, c
     system = "hash-uri",
     packageId = package_id(tables))
   
-  emld::as_xml(meta,  output)
+  #emld::as_xml(meta,  output)
   
 }
 
@@ -38,7 +38,7 @@ package_id <- function(tables){
                 function(x) paste0(openssl::sha256(file(x$file))),
                 character(1L))
   
-  hash <- paste0(openssl::sha256(paste(ids, sep="\n")))
+  hash <- paste0(openssl::sha256(paste(ids, collapse="\n")))
   paste0("hash://sha256/", hash)
   
   hash
