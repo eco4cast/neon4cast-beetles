@@ -1,0 +1,138 @@
+---
+title: "scoring.Rmd"
+output: github_document
+---
+
+```{r setup, message=FALSE}
+library(contentid)
+library(tidyverse)
+```
+
+Load the forecast and true values as determined by `workflow.md`:
+
+```{r}
+richness_forecast <- read_csv(resolve("hash://sha256/93e741a4ff044319b3288d71c71d4e95a76039bc3656e252621d3ad49ccc8200"))
+true_richness <- read_csv(resolve("hash://sha256/b363cc598b55b4645941c99958542aa16db77363ded84544eb49c6ffe478441e"))
+```
+
+Create MCMC replicates from the moments in the forecast:
+
+```{r}
+
+
+ids <- richness_forecast %>% mutate(id = paste(siteID, year, month, sep="-")) %>% pull(id)
+
+richness_reps <- map_dfr(seq_along(ids), function(i) 
+  data.frame(id = ids[i],
+             rep = 1:500, 
+             y = rnorm(500, richness_forecast$mean[[i]], richness_forecast$sd[[i]])))
+```
+
+Define the CRPS scoring function:
+
+```{r}
+## lower scores are better
+crps <- function(y, d){
+  N <- length(d)
+  s <- 0
+  for(i in 1:N){
+    for(j in 1:N){
+      s <- s + abs(d[i] - d[j])
+    }
+  }
+  mean(abs(d - y)) - s / (2 * N^2)
+}
+crps_vec <- function(y,d) vapply(y, crps, numeric(1L), d)
+
+# samples <- rnorm(500)
+# crps_vec(c(0,1), samples)
+```
+
+
+```{r}
+## assumes true_df has column 'id' to join, and 'true' with observed value
+## predicted_df has replicates, grouped by 'id' indicating a unique prediction 
+## (e.g. n reps at given site and time), with value labeled as `y`
+crps_score <- function(predicted_df,
+                       true_df,
+                       scoring_fn =  crps_vec
+                      ){
+   left_join(predicted_df, true_df)  %>% 
+    group_by(id) %>% 
+    summarise(score = crps(true, y))
+}
+
+```
+
+
+
+```{r}
+true_richness <- true_richness %>% mutate(id = paste(siteID, 2019, month, sep="-"))
+scores_crps <- crps_score(richness_reps, true_richness)
+```
+
+
+
+## Using moment closure, Gneiting & Raferty Eq 27:
+
+
+```{r}
+## note, bigger scores are better here
+score <- function(predicted_df,
+                  true_df,
+                  scoring_fn =  function(x, mu, sigma){ -(mu - x )^2 / sigma^2  - log(sigma)}
+                  ){
+  true_df %>% 
+  left_join(predicted_df)  %>%
+  mutate(score = scoring_fn(true, mean, sd))
+}
+
+```  
+
+
+```{r message=FALSE}
+richness_score <- score(richness_forecast, true_richness)
+
+## average the scores when we have 2 observations in the same month(?)
+eq27 <- richness_score  %>% mutate(id = paste(siteID, year, month, sep="-")) %>%
+  group_by(id) %>% summarise(score = mean(score))
+
+```
+
+## Compare best & worst predictions under the two scoring metrics:
+
+Combined scores, sorting by best CRPS score (using `neg_crps` so that bigger is better in both cases)
+
+```{r}
+combined <- scores_crps %>% 
+  mutate(neg_crps = - score) %>% 
+  select(-score) %>%
+  left_join(eq27, by="id") %>%
+  rename(eq27 = score) %>%
+  arrange(desc(neg_crps))
+
+combined
+```
+
+
+
+Best-predicted observations:
+
+```{r}
+# CRPS, small is best
+scores_crps %>% arrange(score)
+# eq27: Bigger is better:
+eq27 %>% arrange(desc(score))
+```
+
+Worst-predicted:
+
+```{r}
+scores_crps %>% arrange(desc(score))
+eq27 %>% arrange(score)
+```
+
+
+
+
+
