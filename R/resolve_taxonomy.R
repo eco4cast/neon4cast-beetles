@@ -2,6 +2,17 @@
 # Update `scientificName`, `taxonID`, `taxonRank` and `morphospeciesID` using assignments from parataxonomy and expert taxonomy.
 # 
 library(dplyr)
+library(stringi)
+
+clean_names <- function (x) 
+{
+  s <- stringi::stri_split_regex(x, "/", simplify = TRUE)[,1]
+  s <- stringi::stri_extract_all_words(s, simplify = TRUE)
+  if (dim(s)[2] > 1) 
+    stringi::stri_trim(paste(s[, 1], s[, 2]))
+  else stringi::stri_trim(s[, 1])
+}
+
 resolve_taxonomy <- function(sorting, para, expert){
   
   taxonomy <-
@@ -43,7 +54,7 @@ resolve_taxonomy <- function(sorting, para, expert){
     mutate(morphospecies = 
              ifelse(taxonRank %in% c("subgenus", "genus", "family", "order") & !is.na(morphospeciesID), 
                     morphospeciesID,
-                    taxadb::clean_names(scientificName)
+                    clean_names(scientificName)
              )
     )
   

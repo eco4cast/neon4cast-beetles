@@ -1,7 +1,7 @@
 ## 04_score.R
 library(tidyverse)
 library(scoringRules)
-base <- Sys.getenv("MINIO_BUCKET", ".")
+base <- Sys.getenv("MINIO_HOME", ".")
 
 ## Prediction
 richness_forecast <- read_csv(file.path(base, "forecast/beetle/richness_forecast.csv.gz"))

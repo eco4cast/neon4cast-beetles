@@ -42,7 +42,7 @@ abund <- counts %>%
   mutate(abund = count / trapnights) %>% ungroup()
 
 
-base <- Sys.getenv("MINIO_BUCKET", ".")
+base <- Sys.getenv("MINIO_HOME", ".")
 readr::write_csv(richness, file.path(base, "targets/beetle/richness.csv.gz"))
 readr::write_csv(abund, file.path(base, "targets/beetle/abund.csv.gz"))
 

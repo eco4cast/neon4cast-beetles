@@ -1,5 +1,5 @@
 library(tidyverse)
-base <- Sys.getenv("MINIO_BUCKET", ".")
+base <- Sys.getenv("MINIO_HOME", ".")
 
 ## For illustrative purposes, restrict forecast to 2019
 forecast_year <- 2019
