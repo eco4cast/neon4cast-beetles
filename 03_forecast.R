@@ -44,13 +44,14 @@ mcmc_samples <- function(df, n_reps = 500){
                                  y = rnorm(n_reps, df$mean[[i]], df$sd[[i]])))
 }
 
+n_reps = 500
 richness_forecast <- mcmc_samples(richness_model, n_reps)
 abund_forecast <- mcmc_samples(abund_model, n_reps)
 
 
 ## Store the forecast products
 readr::write_csv(richness_forecast, file.path(base, "forecasts/beetle/richness_forecast.csv.gz"))
-readr::write_csv(abund_forecast,  file.path("forecasts/beetle/abund_forecast.csv.gz"))
+readr::write_csv(abund_forecast,  file.path(base, "forecasts/beetle/abund_forecast.csv.gz"))
 
 
 
