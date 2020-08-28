@@ -1,0 +1,55 @@
+library(tidyverse)
+
+## For illustrative purposes, restrict forecast to 2019
+forecast_year <- 2019
+
+## Read in the target data.  
+## NOTE: in general a forecast may instead be made directly from the 
+## the raw data, and may include other drivers.  Using only the target
+## variables for prediction is merely a minimal model.  
+richness <- read_csv("targets/richness.csv")
+abund <- read_csv("targets/abund.csv")
+
+## Forecast is just based on historic mean/sd by siteID & month
+richness_model <- richness %>% 
+  filter(year < forecast_year) %>%
+  group_by(month, siteID) %>%
+  summarize(mean = mean(n, na.rm = TRUE),
+            sd = sd(n, na.rm = TRUE)) %>% 
+  mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
+  mutate(year = forecast_year)
+
+
+abund_model <- abund %>% 
+  filter(year < forecast_year) %>%
+  group_by(month, siteID) %>%
+  summarize(mean = mean(abund, na.rm=TRUE),
+            sd = sd(abund, na.rm=TRUE))  %>% 
+  mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
+  mutate(year = forecast_year)
+
+### Express forecasts in terms of replicates instead of analytic mean, sd.
+### This allows for scoring using CRPS, and generalizes to MCMC-based forecasts
+
+mcmc_samples <- function(df, n_reps = 500){
+  ids <- df %>%
+    mutate(id = paste(siteID, year, month, sep="-")) %>% 
+    pull(id)
+  map_dfr(seq_along(ids), 
+          function(i) data.frame(id = ids[i],
+                                 rep = 1:n_reps, 
+                                 y = rnorm(n_reps, df$mean[[i]], df$sd[[i]])))
+}
+
+richness_forecast <- mcmc_samples(richness_model, n_reps)
+abund_forecast <- mcmc_samples(abund_model, n_reps)
+
+
+## Publish the forecast products
+
+readr::write_csv(richness_forecast, "forecast/richness_forecast.csv")
+readr::write_csv(abund_forecast, "forecast/abund_forecast.csv")
+
+publish(c("forecast/richness_forecast.csv", "forecast/abund_forecast.csv"))
+
+
