@@ -28,25 +28,7 @@ richness_reps <- map_dfr(seq_along(ids), function(i)
              y = rnorm(500, richness_forecast$mean[[i]], richness_forecast$sd[[i]])))
 ```
 
-Define the CRPS scoring function:
 
-```{r}
-## lower scores are better
-crps <- function(y, d){
-  N <- length(d)
-  s <- 0
-  for(i in 1:N){
-    for(j in 1:N){
-      s <- s + abs(d[i] - d[j])
-    }
-  }
-  mean(abs(d - y)) - s / (2 * N^2)
-}
-crps_vec <- function(y,d) vapply(y, crps, numeric(1L), d)
-
-# samples <- rnorm(500)
-# crps_vec(c(0,1), samples)
-```
 
 
 ```{r}
@@ -55,11 +37,11 @@ crps_vec <- function(y,d) vapply(y, crps, numeric(1L), d)
 ## (e.g. n reps at given site and time), with value labeled as `y`
 crps_score <- function(predicted_df,
                        true_df,
-                       scoring_fn =  crps_vec
+                       scoring_fn =  scoringRules::crps_sample
                       ){
    left_join(predicted_df, true_df)  %>% 
     group_by(id) %>% 
-    summarise(score = crps(true, y))
+    summarise(score = scoring_fn(y, true))
 }
 
 ```

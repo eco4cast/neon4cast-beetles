@@ -162,7 +162,7 @@ for which we have no catch.)
 To mimic scoring our forecast, we will remove data from `r forecast_year` or later.  The actual null forecast should of course omit that filter.  
 
 ```{r}
-null_richness <- richness %>% 
+richness_forecast <- richness %>% 
     filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
   summarize(mean = mean(n, na.rm = TRUE),
@@ -170,12 +170,12 @@ null_richness <- richness %>%
   mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
   mutate(year = forecast_year)
 
-null_richness
+richness_forecast
 ```
 
 
 ```{r}
-null_abund <- abund %>% 
+abund_forecast <- abund %>% 
       filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
   summarize(mean = mean(abund, na.rm=TRUE),
@@ -190,8 +190,8 @@ null_abund <- abund %>%
 
 
 ```{r}
-readr::write_csv(null_richness, "products/richness_forecast.csv")
-readr::write_csv(null_abund, "products/abund_forecast.csv")
+readr::write_csv(richness_forecast, "products/richness_forecast.csv")
+readr::write_csv(abund_forecast, "products/abund_forecast.csv")
 
 publish(c("products/richness_forecast.csv", "products/abund_forecast.csv"))
 ```
@@ -200,6 +200,7 @@ publish(c("products/richness_forecast.csv", "products/abund_forecast.csv"))
 
 ## Score the forecast
 
+(higher the score the better)
 
 ```{r}
 ## predicted_df must have columns: mean, sd, and any grouping variables (siteID, month)
@@ -223,7 +224,7 @@ true_richness <- richness %>%
   filter(year >= forecast_year) %>%
   select(month, siteID, true = n)
 
-richness_score <- score(null_richness, true_richness)
+richness_score <- score(richness_forecast, true_richness)
 ```
 
 Extract the observed abundance measure (counts/trapnight) for `r forecast_year` and compute score
@@ -234,7 +235,7 @@ true_abund <- abund %>%
   filter(year >= forecast_year) %>%
   select(month, siteID, true = abund)
 
-abund_score <- score(null_abund, true_abund)
+abund_score <- score(abund_forecast, true_abund)
 ```
 
 
