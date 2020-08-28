@@ -21,7 +21,8 @@ beetles <- resolve_taxonomy(sorting, para, expert) %>%
 richness <- beetles %>%  
   select(taxonID, siteID, collectDate, month, year) %>%
   distinct() %>%
-  count(siteID, month, year)
+  count(siteID, month, year) %>% 
+  rename(value = n)
 
 
 
@@ -39,14 +40,21 @@ counts <- sorting %>%
 
 abund <- counts %>% 
   left_join(effort) %>% 
-  mutate(abund = count / trapnights) %>% ungroup()
+  mutate(value = count / trapnights) %>% ungroup()
 
 
-base <- Sys.getenv("MINIO_BUCKET", ".")
+## Write files locally
+base <- Sys.getenv("MINIO_HOME", ".")
 richness.csv <- file.path(base, "targets/beetle/richness.csv.gz")
 abund.csv <- file.path(base, "targets/beetle/abund.csv.gz")
 readr::write_csv(richness, richness.csv)
 readr::write_csv(abund, abund.csv)
 
+
+
+## Publish files to the content-store
 source("R/publish.R")
+# publish(c(richness.csv, abund.csv))
+# Need a metadata file / prov record
+
 
