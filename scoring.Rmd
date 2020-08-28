@@ -36,12 +36,12 @@ richness_reps <- map_dfr(seq_along(ids), function(i)
 ## predicted_df has replicates, grouped by 'id' indicating a unique prediction 
 ## (e.g. n reps at given site and time), with value labeled as `y`
 crps_score <- function(predicted_df,
-                       true_df,
-                       scoring_fn =  scoringRules::crps_sample
+                       true_df
                       ){
+   scoring_fn <- function(y, dat) tryCatch(scoringRules::crps_sample(y, dat), error = function(e) NA_real_, finally = NA_real_)
    left_join(predicted_df, true_df)  %>% 
     group_by(id) %>% 
-    summarise(score = scoring_fn(y, true))
+    summarise(score = scoring_fn(y = true[[1]], dat = y))
 }
 
 ```
@@ -49,8 +49,10 @@ crps_score <- function(predicted_df,
 
 
 ```{r}
-true_richness <- true_richness %>% mutate(id = paste(siteID, 2019, month, sep="-"))
-scores_crps <- crps_score(richness_reps, true_richness)
+
+obs <- true_richness %>% mutate(id = paste(siteID, 2019, month, sep="-")) %>% group_by(id) %>% summarize(true = mean(true))
+
+scores_crps <- crps_score(richness_reps, obs)
 ```
 
 

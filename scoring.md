@@ -45,47 +45,31 @@ richness_reps <- map_dfr(seq_along(ids), function(i)
              y = rnorm(500, richness_forecast$mean[[i]], richness_forecast$sd[[i]])))
 ```
 
-Define the CRPS scoring function:
-
-``` r
-## lower scores are better
-crps <- function(y, d){
-  N <- length(d)
-  s <- 0
-  for(i in 1:N){
-    for(j in 1:N){
-      s <- s + abs(d[i] - d[j])
-    }
-  }
-  mean(abs(d - y)) - s / (2 * N^2)
-}
-crps_vec <- function(y,d) vapply(y, crps, numeric(1L), d)
-
-# samples <- rnorm(500)
-# crps_vec(c(0,1), samples)
-```
-
 ``` r
 ## assumes true_df has column 'id' to join, and 'true' with observed value
 ## predicted_df has replicates, grouped by 'id' indicating a unique prediction 
 ## (e.g. n reps at given site and time), with value labeled as `y`
 crps_score <- function(predicted_df,
-                       true_df,
-                       scoring_fn =  crps_vec
+                       true_df
                       ){
+   scoring_fn <- function(y, dat) tryCatch(scoringRules::crps_sample(y, dat), error = function(e) NA_real_, finally = NA_real_)
    left_join(predicted_df, true_df)  %>% 
     group_by(id) %>% 
-    summarise(score = crps(true, y))
+    summarise(score = scoring_fn(y = true[[1]], dat = y))
 }
 ```
 
 ``` r
-true_richness <- true_richness %>% mutate(id = paste(siteID, 2019, month, sep="-"))
-scores_crps <- crps_score(richness_reps, true_richness)
+obs <- true_richness %>% mutate(id = paste(siteID, 2019, month, sep="-")) %>% group_by(id) %>% summarize(true = mean(true))
+```
+
+    ## `summarise()` ungrouping output (override with `.groups` argument)
+
+``` r
+scores_crps <- crps_score(richness_reps, obs)
 ```
 
     ## Joining, by = "id"
-
     ## `summarise()` ungrouping output (override with `.groups` argument)
 
 ## Using moment closure, Gneiting & Raferty Eq 27:
@@ -129,16 +113,16 @@ combined
     ## # A tibble: 270 x 3
     ##    id            neg_crps    eq27
     ##    <chr>            <dbl>   <dbl>
-    ##  1 JORN-2019-Oct   -0.205  0.203 
-    ##  2 JORN-2019-Apr   -0.213  0.216 
-    ##  3 HEAL-2019-Aug   -0.239  0.0485
-    ##  4 DELA-2019-May   -0.297 -0.201 
-    ##  5 SOAP-2019-May   -0.298 -0.153 
-    ##  6 JORN-2019-May   -0.323 -0.158 
-    ##  7 BONA-2019-Jul   -0.323 -0.25  
-    ##  8 MOAB-2019-May   -0.324 -0.291 
-    ##  9 BARR-2019-Jul   -0.325 -0.269 
-    ## 10 ABBY-2019-Sep   -0.326 -0.267 
+    ##  1 DELA-2019-May   -0.143 -0.201 
+    ##  2 JORN-2019-Oct   -0.187  0.203 
+    ##  3 JORN-2019-Apr   -0.210  0.216 
+    ##  4 HEAL-2019-Aug   -0.223  0.0485
+    ##  5 DEJU-2019-Aug   -0.240 -0.353 
+    ##  6 BONA-2019-Jul   -0.244 -0.25  
+    ##  7 SJER-2019-Mar   -0.268 -0.894 
+    ##  8 SOAP-2019-May   -0.293 -0.153 
+    ##  9 JORN-2019-May   -0.297 -0.158 
+    ## 10 CLBJ-2019-Sep   -0.298 -0.5   
     ## # … with 260 more rows
 
 Best-predicted observations:
@@ -151,16 +135,16 @@ scores_crps %>% arrange(score)
     ## # A tibble: 270 x 2
     ##    id            score
     ##    <chr>         <dbl>
-    ##  1 JORN-2019-Oct 0.205
-    ##  2 JORN-2019-Apr 0.213
-    ##  3 HEAL-2019-Aug 0.239
-    ##  4 DELA-2019-May 0.297
-    ##  5 SOAP-2019-May 0.298
-    ##  6 JORN-2019-May 0.323
-    ##  7 BONA-2019-Jul 0.323
-    ##  8 MOAB-2019-May 0.324
-    ##  9 BARR-2019-Jul 0.325
-    ## 10 ABBY-2019-Sep 0.326
+    ##  1 DELA-2019-May 0.143
+    ##  2 JORN-2019-Oct 0.187
+    ##  3 JORN-2019-Apr 0.210
+    ##  4 HEAL-2019-Aug 0.223
+    ##  5 DEJU-2019-Aug 0.240
+    ##  6 BONA-2019-Jul 0.244
+    ##  7 SJER-2019-Mar 0.268
+    ##  8 SOAP-2019-May 0.293
+    ##  9 JORN-2019-May 0.297
+    ## 10 CLBJ-2019-Sep 0.298
     ## # … with 260 more rows
 
 ``` r
@@ -192,16 +176,16 @@ scores_crps %>% arrange(desc(score))
     ## # A tibble: 270 x 2
     ##    id            score
     ##    <chr>         <dbl>
-    ##  1 NOGP-2019-Aug  9.06
-    ##  2 KONA-2019-Sep  8.35
-    ##  3 STEI-2019-Oct  7.94
-    ##  4 SERC-2019-Jun  7.22
+    ##  1 NOGP-2019-Aug  8.90
+    ##  2 KONA-2019-Sep  8.12
+    ##  3 STEI-2019-Oct  7.75
+    ##  4 SERC-2019-Jun  7.40
     ##  5 CPER-2019-Oct  7   
-    ##  6 SERC-2019-Aug  6.61
-    ##  7 SCBI-2019-Sep  6.05
-    ##  8 WOOD-2019-Sep  5.83
-    ##  9 LENO-2019-May  5.75
-    ## 10 NIWO-2019-Jun  5.68
+    ##  6 WOOD-2019-Sep  6.22
+    ##  7 SCBI-2019-Sep  6.14
+    ##  8 SERC-2019-Aug  6.07
+    ##  9 LENO-2019-May  5.81
+    ## 10 NIWO-2019-Jun  5.74
     ## # … with 260 more rows
 
 ``` r
