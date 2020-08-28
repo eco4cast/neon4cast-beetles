@@ -1,15 +1,15 @@
 ## 04_score.R
 library(tidyverse)
 library(scoringRules)
-
+base <- Sys.getenv("MINIO_BUCKET", ".")
 
 ## Prediction
-richness_forecast <- read_csv("forecast/beetle/richness_forecast.csv.gz")
-abund_forecast <- read_csv("forecast/beetle/abund_forecast.csv.gz")
+richness_forecast <- read_csv(file.path(base, "forecast/beetle/richness_forecast.csv.gz"))
+abund_forecast <- read_csv(file.path(base, "forecast/beetle/abund_forecast.csv.gz"))
 
 ## Targets
-richness <- read_csv("targets/beetle/richness.csv.gz")
-abund <- read_csv("targets/beetle/abund.csv.gz")
+richness <- read_csv(file.path(base, "targets/beetle/richness.csv.gz"))
+abund <- read_csv(file.path(base, "targets/beetle/abund.csv.gz"))
 
 
 crps_score <- function(forecast,
@@ -29,7 +29,6 @@ crps_score <- function(forecast,
 richness_score <- crps_score(richness_forecast, richness)
 abund_score <- crps_score(abund_forecast, abund)
 
-base <- Sys.getenv("MINIO_BUCKET", ".")
 write_csv(richness_score, file.path(base, "scores/beetle/richness_score.csv.gz"))
 write_csv(abund_score, file.path(base, "scores/beetle/abund_score.csv.gz"))
 

@@ -1,4 +1,5 @@
 library(tidyverse)
+base <- Sys.getenv("MINIO_BUCKET", ".")
 
 ## For illustrative purposes, restrict forecast to 2019
 forecast_year <- 2019
@@ -7,8 +8,10 @@ forecast_year <- 2019
 ## NOTE: in general a forecast may instead be made directly from the 
 ## the raw data, and may include other drivers.  Using only the target
 ## variables for prediction is merely a minimal model.  
-richness <- read_csv("targets/beetle/richness.csv.gz")
-abund <- read_csv("targets/beetle/abund.csv.gz")
+
+
+richness <- read_csv(file.path(base, "targets/beetle/richness.csv.gz"))
+abund <- read_csv(file.path(base, "targets/beetle/abund.csv.gz"))
 
 ## Forecast is just based on historic mean/sd by siteID & month
 richness_model <- richness %>% 
@@ -46,7 +49,6 @@ abund_forecast <- mcmc_samples(abund_model, n_reps)
 
 
 ## Store the forecast products
-base <- Sys.getenv("MINIO_BUCKET", ".")
 readr::write_csv(richness_forecast, file.path(base, "forecasts/beetle/richness_forecast.csv.gz"))
 readr::write_csv(abund_forecast,  file.path("forecasts/beetle/abund_forecast.csv.gz"))
 
