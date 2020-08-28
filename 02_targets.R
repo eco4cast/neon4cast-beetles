@@ -21,9 +21,8 @@ beetles <- resolve_taxonomy(sorting, para, expert) %>%
 richness <- beetles %>%  
   select(taxonID, siteID, collectDate, month, year) %>%
   distinct() %>%
-  count(siteID, collectDate, month, year)
+  count(siteID, month, year)
 
-readr::write_csv(richness, "targets/richness.csv")
 
 
 #### Generate derived abundance table ####################
@@ -35,16 +34,15 @@ effort <- field %>%
 counts <- sorting %>% 
   mutate(month = lubridate::month(collectDate, label=TRUE),
          year =  lubridate::year(collectDate)) %>%
-  group_by(collectDate, siteID, year, month) %>%
+  group_by(siteID, year, month) %>%
   summarize(count = sum(individualCount, na.rm = TRUE))
 
 abund <- counts %>% 
   left_join(effort) %>% 
   mutate(abund = count / trapnights) %>% ungroup()
 
-readr::write_csv(abund, "targets/abund.csv")
 
-### Publish
-# publish(c("products/richness.csv", "products/abund.csv"))
-
+base <- Sys.getenv("MINIO_BUCKET", ".")
+readr::write_csv(richness, file.path(base, "targets/beetle/richness.csv.gz"))
+readr::write_csv(abund, file.path(base, "targets/beetle/abund.csv.gz"))
 

@@ -4,12 +4,12 @@ library(scoringRules)
 
 
 ## Prediction
-richness_forecast <- read_csv("forecast/richness_forecast.csv")
-abund_forecast <- read_csv("forecast/abund_forecast.csv")
+richness_forecast <- read_csv("forecast/beetle/richness_forecast.csv.gz")
+abund_forecast <- read_csv("forecast/beetle/abund_forecast.csv.gz")
 
 ## Targets
-richness <- read_csv("targets/richness.csv")
-abund <- read_csv("targets/abund.csv")
+richness <- read_csv("targets/beetle/richness.csv.gz")
+abund <- read_csv("targets/beetle/abund.csv.gz")
 
 
 crps_score <- function(forecast,
@@ -21,7 +21,7 @@ crps_score <- function(forecast,
   
   ## Left-join will keep only the rows for which site,month,year of the target match the predicted
   left_join(forecast, target, by = c("siteID", "month", "year"))  %>% 
-    mutate(id = paste(siteID, year, month, true, sep="-")) %>%
+    mutate(id = paste(siteID, year, month, sep="-")) %>%
     group_by(id) %>% 
     summarise(score = scoring_fn(true[[1]], y))
 }
@@ -29,9 +29,8 @@ crps_score <- function(forecast,
 richness_score <- crps_score(richness_forecast, richness)
 abund_score <- crps_score(abund_forecast, abund)
 
-
-readr::write_csv(richness_score, "score/richness_score.csv")
-readr::write_csv(abund_score, "score/abund_score.csv")
-publish(c("score/richness_score.csv", "score/abund_score.csv"))
+base <- Sys.getenv("MINIO_BUCKET", ".")
+write_csv(richness_score, file.path(base, "scores/beetle/richness_score.csv.gz"))
+write_csv(abund_score, file.path(base, "scores/beetle/abund_score.csv.gz"))
 
 

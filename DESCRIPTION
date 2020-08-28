@@ -1,0 +1,4 @@
+Package: compendium
+Version: 0.1.0
+Depends: tidyverse, neonstore, scoringRules, openssl
+Suggests: vroom, emld, contentid

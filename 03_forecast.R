@@ -7,8 +7,8 @@ forecast_year <- 2019
 ## NOTE: in general a forecast may instead be made directly from the 
 ## the raw data, and may include other drivers.  Using only the target
 ## variables for prediction is merely a minimal model.  
-richness <- read_csv("targets/richness.csv")
-abund <- read_csv("targets/abund.csv")
+richness <- read_csv("targets/beetle/richness.csv.gz")
+abund <- read_csv("targets/beetle/abund.csv.gz")
 
 ## Forecast is just based on historic mean/sd by siteID & month
 richness_model <- richness %>% 
@@ -45,11 +45,11 @@ richness_forecast <- mcmc_samples(richness_model, n_reps)
 abund_forecast <- mcmc_samples(abund_model, n_reps)
 
 
-## Publish the forecast products
+## Store the forecast products
+base <- Sys.getenv("MINIO_BUCKET", ".")
+readr::write_csv(richness_forecast, file.path(base, "forecasts/beetle/richness_forecast.csv.gz"))
+readr::write_csv(abund_forecast,  file.path("forecasts/beetle/abund_forecast.csv.gz"))
 
-readr::write_csv(richness_forecast, "forecast/richness_forecast.csv")
-readr::write_csv(abund_forecast, "forecast/abund_forecast.csv")
 
-publish(c("forecast/richness_forecast.csv", "forecast/abund_forecast.csv"))
 
 
