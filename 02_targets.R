@@ -43,6 +43,10 @@ abund <- counts %>%
 
 
 base <- Sys.getenv("MINIO_BUCKET", ".")
-readr::write_csv(richness, file.path(base, "targets/beetle/richness.csv.gz"))
-readr::write_csv(abund, file.path(base, "targets/beetle/abund.csv.gz"))
+richness.csv <- file.path(base, "targets/beetle/richness.csv.gz")
+abund.csv <- file.path(base, "targets/beetle/abund.csv.gz")
+readr::write_csv(richness, richness.csv)
+readr::write_csv(abund, abund.csv)
+
+source("R/publish.R")
 
