@@ -21,7 +21,8 @@ beetles <- resolve_taxonomy(sorting, para, expert) %>%
 richness <- beetles %>%  
   select(taxonID, siteID, collectDate, month, year) %>%
   distinct() %>%
-  count(siteID, month, year)
+  count(siteID, month, year) %>% 
+  rename(value = n)
 
 
 
@@ -39,7 +40,7 @@ counts <- sorting %>%
 
 abund <- counts %>% 
   left_join(effort) %>% 
-  mutate(abund = count / trapnights) %>% ungroup()
+  mutate(value = count / trapnights) %>% ungroup()
 
 
 base <- Sys.getenv("MINIO_HOME", ".")

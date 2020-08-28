@@ -4,8 +4,8 @@ library(scoringRules)
 base <- Sys.getenv("MINIO_HOME", ".")
 
 ## Prediction
-richness_forecast <- read_csv(file.path(base, "forecast/beetle/richness_forecast.csv.gz"))
-abund_forecast <- read_csv(file.path(base, "forecast/beetle/abund_forecast.csv.gz"))
+richness_forecast <- read_csv(file.path(base, "forecasts/beetle/richness_forecast.csv.gz"))
+abund_forecast <- read_csv(file.path(base, "forecasts/beetle/abund_forecast.csv.gz"))
 
 ## Targets
 richness <- read_csv(file.path(base, "targets/beetle/richness.csv.gz"))
@@ -20,10 +20,12 @@ crps_score <- function(forecast,
     tryCatch(scoringRules::crps_sample(y, dat), error = function(e) NA_real_, finally = NA_real_)
   
   ## Left-join will keep only the rows for which site,month,year of the target match the predicted
-  left_join(forecast, target, by = c("siteID", "month", "year"))  %>% 
+  left_join(forecast, 
+            rename(target, true = value),
+            by = c("siteID", "month", "year"))  %>% 
     mutate(id = paste(siteID, year, month, sep="-")) %>%
     group_by(id) %>% 
-    summarise(score = scoring_fn(true[[1]], y))
+    summarise(score = scoring_fn(true[[1]], value))
 }
 
 richness_score <- crps_score(richness_forecast, richness)

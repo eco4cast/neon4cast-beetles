@@ -17,8 +17,8 @@ abund <- read_csv(file.path(base, "targets/beetle/abund.csv.gz"))
 richness_model <- richness %>% 
   filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
-  summarize(mean = mean(n, na.rm = TRUE),
-            sd = sd(n, na.rm = TRUE)) %>% 
+  summarize(mean = mean(value, na.rm = TRUE),
+            sd = sd(value, na.rm = TRUE)) %>% 
   mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
   mutate(year = forecast_year)
 
@@ -26,8 +26,8 @@ richness_model <- richness %>%
 abund_model <- abund %>% 
   filter(year < forecast_year) %>%
   group_by(month, siteID) %>%
-  summarize(mean = mean(abund, na.rm=TRUE),
-            sd = sd(abund, na.rm=TRUE))  %>% 
+  summarize(mean = mean(value, na.rm=TRUE),
+            sd = sd(value, na.rm=TRUE))  %>% 
   mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
   mutate(year = forecast_year)
 
@@ -35,13 +35,13 @@ abund_model <- abund %>%
 ### This allows for scoring using CRPS, and generalizes to MCMC-based forecasts
 
 mcmc_samples <- function(df, n_reps = 500){
-  ids <- df %>%
-    mutate(id = paste(siteID, year, month, sep="-")) %>% 
-    pull(id)
-  map_dfr(seq_along(ids), 
-          function(i) data.frame(id = ids[i],
+  
+  map_dfr(1:nrow(df), 
+          function(i) data.frame(siteID = df$siteID[[i]],
+                                 year = df$year[[i]],
+                                 month = df$month[[i]],
                                  rep = 1:n_reps, 
-                                 y = rnorm(n_reps, df$mean[[i]], df$sd[[i]])))
+                                 value = rnorm(n_reps, df$mean[[i]], df$sd[[i]])))
 }
 
 n_reps = 500
