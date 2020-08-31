@@ -12,12 +12,18 @@ source("R/meta.R")
 Specify core metadata as list objects:
 
 ```{r}
-carl <- "https://orcid.org/0000-0002-1642-628X"
+carl <- "http://orcid.org/0000-0002-1642-628X"
 authors <- list(list(individualName = list(givenName = "Carl", surName = "Boettiger"), 
                 id = carl),
                 list(individualName = list(givenName = "Anna",  surName ="Spiers")),
                 list(individualName = list(givenName = "Tad", surName = "Dallas")),
-                list(individualName = list(givenName = "Brett", surName = "Melbourne"))
+                list(individualName = list(givenName = "Brett", surName = "Melbourne")),
+                list(individualName = list(givenName = "Kari", surName = "Norman")),
+                list(individualName = list(givenName = "Eric", surName = "Sokol")),
+                list(individualName = list(givenName = "Kelsey", surName = "Yule")),
+                list(individualName = list(givenName = "Nico", surName = "Franz")),
+                list(individualName = list(givenName = "Thilina", surName = "Surasinghe")),
+                list(individualName = list(givenName = "Quinn", surName = "Thomas"))
                 )
 
 tables <- list(
