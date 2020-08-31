@@ -1,7 +1,18 @@
 
+library(contentid)
+library(uuid)
+library(jsonld)
+library(jsonlite)
+library(openssl)
+
+
+publish <- function(data_in, code, data_out, meta = NULL, provdb="prov.json"){
+  register(c(data_in,code, data_out, meta))
+  prov(data_in, code, data_out, meta, provdb)
   
+  }
   
-publish <-  function(files, dir ="/minio/content-store/", server = "https://minio.thelio.carlboettiger.info"){
+register <-  function(files, dir ="/efi_forecast_challenge/content-store/", server = "https://data.ecoforecast.org"){
   
   ## Add files to the store and retrieve paths.  (should vectorize these fns!)
   ids <- lapply(files, contentid::store, dir)
@@ -24,28 +35,30 @@ context <- function(){
        dct = "http://purl.org/dc/terms/",
        id = "@id",
        type = "@type",
-       identifier = "dct:identifier",
+       identifier = list("@id" =  "dct:identifier", "@type" = "@id"),
        title = "dct:title",
        description = "dct:description",
        issued = "dct:issued",
        format = "dct:format",
-       license = "dct:license",
+       license = list("@id" =  "dct:license", "@type" = "@id"),
        creator = "dct:creator",
        compressFormat = "dcat:compressFormat",
        byteSize = "dcat:byteSize",
-       wasDerivedFrom = "prov:wasDerivedFrom",
-       wasGeneratedBy = "prov:wasGeneratedBy",
+       wasDerivedFrom = list("@id" =  "prov:wasDerivedFrom", "@type" = "@id"),
+       wasGeneratedBy = list("@id" =  "prov:wasGeneratedBy", "@type" = "@id"),
        wasGeneratedAtTime = "prov:wasGeneratedAtTime",
-       used = "prov:used",
-       isRevisionOf = "prov:isRevisionOf",
-       distribution = "dcat:distribution",
+       used = list("@id" =  "prov:used", "@type" = "@id"),
+       wasRevisionOf = list("@id" =  "prov:wasRevisionOf", "@type" = "@id"),
+       isDocumentedBy = list("@id" =  "http://purl.org/spar/cito/isDocumentedBy", "@type" = "@id"),
+       distribution = list("@id" =  "dcat:distribution", "@type" = "@id"),
        Dataset = "dcat:Dataset",
        Activity = "prov:Activity",
        Distribution = "dcat:Distribution",
-       isDocumentedBy = "http://purl.org/spar/cito/isDocumentedBy",
        SoftwareSourceCode = "http://schema.org/SoftwareSourceCode")
 }
 
+
+write_json(list("@context"=context()), "dcat_context.json", auto_unbox=TRUE, pretty=TRUE)
 
 hash_id <- function(f){
   if(is.null(f)) return(NULL)
@@ -86,17 +99,25 @@ dcat_distribution <- function(file, description = NULL, meta = NULL){
 }
 
 
-prov <- function(data_in, code, data_out, meta = NULL, provfile="prov.json"){
+multihash_id <- function(files){
+  ids <- vapply(files, 
+                function(x) paste0("hash://sha256/", openssl::sha256(file(x))),
+                character(1L))
+  paste0("hash://sha256/", paste0(openssl::sha256(paste(ids, collapse="\n"))))
+}
+
+prov <- function(data_in, code, data_out, meta = NULL, provdb="prov.json"){
   
   code_id <- hash_id(code)
   meta_id <- hash_id(meta)
   in_id <- hash_id(data_in)
   out_id <- hash_id(data_out)
-  
-  out <- 
+  dataset_id <- multihash_id(c(data_in, code, data_out, meta))
+  out <- compact(
       c(list("@context" = context()),
         type = "Dataset",
-        issued = Sys.Date(),
+        id = dataset_id,
+        issued = as.character(Sys.Date()),
         license = "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
         distribution = list(compact(list(
           dcat_distribution(meta, description = "EML metadata document"),
@@ -114,11 +135,50 @@ prov <- function(data_in, code, data_out, meta = NULL, provfile="prov.json"){
           wasGeneratedAtTime = file.mtime(data_out),
           wasDerivedFrom = in_id,
           wasGeneratedBy = list(type = "Activity",
+                                id = paste0("urn:uuid:", uuid::UUIDgenerate()),
                                 description = paste("Running R script", basename(code)),
-                                used = code_id)
+                                used = c(in_id, code_id))
           ))
         )))
-      )
-  jsonlite::write_json(compact(out), provfile, auto_unbox=TRUE, pretty = TRUE)
+      ))
+  
+  
+  if(file.exists(provdb)){
+    tmp <- tempfile(fileext=".json")
+    jsonlite::write_json(out, tmp, auto_unbox=TRUE, pretty = TRUE)
+    merge_jsonld(tmp, provdb)
+  } else {
+    jsonlite::write_json(out, provdb, auto_unbox=TRUE, pretty = TRUE)
+  }
 }
+
+
+## Append triples, like so:
+# triple <- list(list("@id" = "hash://sha256/93e741a4ff044319b3288d71c71d4e95a76039bc3656e252621d3ad49ccc8200",
+#                    "http://www.w3.org/ns/prov#wasRevisionOf" = "hash://sha256/xxxxx"))
+# append_ld(triple, "prov.json")
+
+
+
+merge_json <- function(x,y){
+  m <- c(fromJSON(x, simplifyVector = FALSE), fromJSON(y, simplifyVector = FALSE))
+  toJSON(m, auto_unbox = TRUE, pretty = TRUE)
+}
+
+merge_jsonld <- function(x,y, context = "meta/dcat_context.json"){
+  flat_x <- jsonld::jsonld_flatten(x) 
+  flat_y <- jsonld::jsonld_flatten(y)
+  json <- merge_json(flat_x, flat_y)
+  jsonld::jsonld_compact(json, context)
+}
+
+append_ld <- function(obj, json, context = "meta/dcat_context.json"){
+  flat <- jsonld::jsonld_flatten(json) 
+  flat_list <- jsonlite::fromJSON(flat, simplifyVector = FALSE)
+  combined <- jsonlite::toJSON(c(flat_list, list(obj)), auto_unbox = TRUE)
+  out <- jsonld::jsonld_compact(jsonld::jsonld_flatten(combined), context)
+  
+  writeLines(out, json)
+}
+
 

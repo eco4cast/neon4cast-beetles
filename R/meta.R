@@ -35,13 +35,9 @@ build_eml <- function(title, abstract, creators, contact_orcid, tables = NULL, c
 
 multihash_id <- function(files){
   ids <- vapply(files, 
-                function(x) paste0(openssl::sha256(file(x))),
+                function(x) paste0("hash://sha256/", openssl::sha256(file(x))),
                 character(1L))
-  
-  hash <- paste0(openssl::sha256(paste(ids, collapse="\n")))
-  paste0("hash://sha256/", hash)
-  
-  hash
+  paste0("hash://sha256/", paste0(openssl::sha256(paste(ids, collapse="\n"))))
 }
 
 package_id <- function(tables){
