@@ -40,10 +40,10 @@ publish_dataone <- function(in_file, out_file, code, meta, orcid){
   in_obj <- data_object(in_file)
   code_obj <- data_object(code, mediaType="text/x-rsrc")
   out_obj <- data_object(out_file)
-  dp <- addMember(dp, meta)
-  dp <- addMember(dp, in_obj, meta)
-  dp <- addMember(dp, code_obj, meta)
-  dp <- addMember(dp,  out_obj, meta)
+  dp <- addMember(dp, meta_obj)
+  dp <- addMember(dp, in_obj, meta_obj)
+  dp <- addMember(dp, code_obj, meta_obj)
+  dp <- addMember(dp,  out_obj, meta_obj)
   rules <- data.frame(subject=orcid, permission="changePermission") 
 
   ## Add prov metadata to uploaded package
