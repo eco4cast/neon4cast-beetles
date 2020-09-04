@@ -4,7 +4,7 @@
 ##  We can later resolve these identifiers to any registered source.  
 ## Core provenance information is stored 
 
-source("publish.R")
+source("R/publish.R")
 base <- Sys.getenv("MINIO_HOME", ".")
 provdb <-  file.path(base, "forecasts/prov.json")
 

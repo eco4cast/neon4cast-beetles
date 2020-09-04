@@ -6,21 +6,24 @@ library(jsonlite)
 library(openssl)
 
 
-publish <- function(data_in, code, data_out, meta = NULL, provdb="prov.json"){
-  register(c(data_in,code, data_out, meta))
+publish <- function(data_in, code, data_out, meta = NULL, provdb="prov.json",
+                    dir = Sys.getenv("MINIO_HOME"),
+                    server =  "https://data.ecoforecast.org"){
+  minio_store(c(data_in,code, data_out, meta), dir, server)
   prov(data_in, code, data_out, meta, provdb)
   
   }
   
-register <-  function(files, dir ="/efi_forecast_challenge/content-store/", server = "https://data.ecoforecast.org"){
+minio_store <-  function(files, dir = Sys.getenv("MINIO_HOME"), server = "https://data.ecoforecast.org"){
   
+  store <- file.path(dir, "content-store")
   ## Add files to the store and retrieve paths.  (should vectorize these fns!)
-  ids <- lapply(files, contentid::store, dir)
-  paths <- lapply(ids, contentid::retrieve, dir = dir)
+  ids <- lapply(files, contentid::store, dir = store)
+  paths <- lapply(ids, contentid::retrieve, dir = store)
   
   ## This content-store made public via a MINIO server, so we can 
   ## map paths into URLs and register them. 
-  urls <- gsub("^/minio", server, paths)
+  urls <- file.path(server, gsub(paste0("^", dir), "", paths))
   contentid::register(urls, "https://hash-archive.org")
   
 }
@@ -62,7 +65,7 @@ write_json(list("@context"=context()), "dcat_context.json", auto_unbox=TRUE, pre
 
 hash_id <- function(f){
   if(is.null(f)) return(NULL)
-  paste0("hash://sha256/", openssl::sha256(file(f)))
+  paste0("hash://sha256/", openssl::sha256(file(f, raw = TRUE)))
 }
 
 compact <- function (l) Filter(Negate(is.null), l)
@@ -101,7 +104,7 @@ dcat_distribution <- function(file, description = NULL, meta = NULL){
 
 multihash_id <- function(files){
   ids <- vapply(files, 
-                function(x) paste0("hash://sha256/", openssl::sha256(file(x))),
+                function(x) paste0("hash://sha256/", openssl::sha256(file(x, raw=TRUE))),
                 character(1L))
   paste0("hash://sha256/", paste0(openssl::sha256(paste(ids, collapse="\n"))))
 }
@@ -146,7 +149,8 @@ prov <- function(data_in, code, data_out, meta = NULL, provdb="prov.json"){
   if(file.exists(provdb)){
     tmp <- tempfile(fileext=".json")
     jsonlite::write_json(out, tmp, auto_unbox=TRUE, pretty = TRUE)
-    merge_jsonld(tmp, provdb)
+    out <- merge_jsonld(tmp, provdb)
+    writeLines(out, provdb)
   } else {
     jsonlite::write_json(out, provdb, auto_unbox=TRUE, pretty = TRUE)
   }
