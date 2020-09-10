@@ -45,8 +45,7 @@ forecast <- null_forecast(targets)
 ## Store the forecast products
 readr::write_csv(forecast, "beetle-forecast-null_average.csv.gz")
 
-## Create the metadata record
-
+## Create the metadata record, see metadata.Rmd
 
 
 ## Publish the forecast automatically. (EFI-only)
