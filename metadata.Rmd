@@ -27,11 +27,11 @@ authors <- list(list(individualName = list(givenName = "Carl", surName = "Boetti
                 )
 
 tables <- list(
-  list(file = "products/richness.csv", 
-       description = "Measured carabid beetle species richness
+  list(file = "beetle-targets.csv.gz", 
+       description = "Measured carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps"),
-  list(file = "products/richness_forecast.csv", 
-       description = "Forecast of carabid beetle species richness
+  list(file = "beetle-forecast-null_average.csv.gz", 
+       description = "Forecast of carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps")
 )
 ```
@@ -60,9 +60,10 @@ taxonomicCoverage %>% jsonlite::write_json("meta/carabid_taxa.json")
 Load the stored taxonomic and geographic coverage, compute current temporal coverage:
 
 ```{r}
-richness <- vroom::vroom("products/richness.csv")
-startDate <- min(richness$collectDate)
-endDate <- max(richness$collectDate) # Or is this the forecast horizon
+target <- vroom::vroom("beetle-targets.csv.gz")
+dates <- as.Date(paste(target$year, target$month, "01", sep="-"), format = "%Y-%b-%d")
+startDate <- min(dates)
+endDate <- max(dates) # Or is this the forecast horizon
 temporalCoverage <- 
               list(rangeOfDates =
                 list(beginDate = list(calendarDate = startDate),
@@ -83,8 +84,8 @@ which handles data types reasonably but is fast and loose on units.  Fortunately
 okay for the count data included here. 
 
 ```{r}
-meta <- build_eml(title = "NEON Carabid Species Richness forecast", 
-          abstract = "Simple forecast of Carabid beetle species richness at
+meta <- build_eml(title = "NEON Carabid Species Richness and Abundance Forecast", 
+          abstract = "Simple forecast of Carabid beetle species richness and abundance at
                      each month at each NEON site for 2019, based on historical averages.", 
           creators = authors, 
           contact_orcid = carl,

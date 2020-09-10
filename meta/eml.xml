@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="9b613ecf8b9eb8de853aee44e85e465d816c15135a50e48990e556f77db67830" system="hash-uri" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
+<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="hash://sha256/66e74a625426b4aa4805f3df1b6c96f73979f477d3e1d31af3dde200ae107108" system="hash-uri" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
   <dataset>
-    <title>NEON Carabid Species Richness forecast</title>
-    <creator id="https://orcid.org/0000-0002-1642-628X">
+    <title>NEON Carabid Species Richness and Abundance Forecast</title>
+    <creator id="http://orcid.org/0000-0002-1642-628X">
       <individualName>
         <givenName>Carl</givenName>
         <surName>Boettiger</surName>
@@ -26,8 +26,44 @@
         <surName>Melbourne</surName>
       </individualName>
     </creator>
-    <pubDate>2020-08-20</pubDate>
-    <abstract>Simple forecast of Carabid beetle species richness at
+    <creator>
+      <individualName>
+        <givenName>Kari</givenName>
+        <surName>Norman</surName>
+      </individualName>
+    </creator>
+    <creator>
+      <individualName>
+        <givenName>Eric</givenName>
+        <surName>Sokol</surName>
+      </individualName>
+    </creator>
+    <creator>
+      <individualName>
+        <givenName>Kelsey</givenName>
+        <surName>Yule</surName>
+      </individualName>
+    </creator>
+    <creator>
+      <individualName>
+        <givenName>Nico</givenName>
+        <surName>Franz</surName>
+      </individualName>
+    </creator>
+    <creator>
+      <individualName>
+        <givenName>Thilina</givenName>
+        <surName>Surasinghe</surName>
+      </individualName>
+    </creator>
+    <creator>
+      <individualName>
+        <givenName>Quinn</givenName>
+        <surName>Thomas</surName>
+      </individualName>
+    </creator>
+    <pubDate>2020-09-10</pubDate>
+    <abstract>Simple forecast of Carabid beetle species richness and abundance at
                      each month at each NEON site for 2019, based on historical averages.</abstract>
     <intellectualRights>https://creativecommons.org/publicdomain/zero/1.0/legalcode</intellectualRights>
     <coverage>
@@ -695,7 +731,7 @@
             <calendarDate>2013-07-01</calendarDate>
           </beginDate>
           <endDate>
-            <calendarDate>2020-05-27</calendarDate>
+            <calendarDate>2020-06-01</calendarDate>
           </endDate>
         </rangeOfDates>
       </temporalCoverage>
@@ -719,16 +755,17 @@
       </taxonomicCoverage>
     </coverage>
     <contact>
-      <references>https://orcid.org/0000-0002-1642-628X</references>
+      <references>http://orcid.org/0000-0002-1642-628X</references>
     </contact>
     <dataTable>
-      <entityName>products/richness.csv</entityName>
-      <entityDescription>Measured carabid beetle species richness
+      <entityName>beetle-targets.csv.gz</entityName>
+      <entityDescription>Measured carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps</entityDescription>
-      <physical id="hash://sha256/280700dbc825b9e87fe9e079172d70342e142913d8fb38bbe520e4b94bf11548">
-        <objectName>richness.csv</objectName>
-        <size unit="bytes">60000</size>
-        <authentication method="SHA-256">280700dbc825b9e87fe9e079172d70342e142913d8fb38bbe520e4b94bf11548</authentication>
+      <physical id="hash://sha256/608ac3fcabf6e1cd7a4ba433e3b6e1f314b0fcf9bec642a45df9677728812843">
+        <objectName>beetle-targets.csv.gz</objectName>
+        <size unit="bytes">131528</size>
+        <authentication method="SHA-256">608ac3fcabf6e1cd7a4ba433e3b6e1f314b0fcf9bec642a45df9677728812843</authentication>
+        <compressionMethod>gz</compressionMethod>
         <characterEncoding>UTF-8</characterEncoding>
         <dataFormat>
           <textFormat>
@@ -758,15 +795,6 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>collectDate</attributeName>
-          <attributeDefinition>collectDate</attributeDefinition>
-          <measurementScale>
-            <dateTime>
-              <formatString>YYYY-MM-DD</formatString>
-            </dateTime>
-          </measurementScale>
-        </attribute>
-        <attribute>
           <attributeName>month</attributeName>
           <attributeDefinition>month</attributeDefinition>
           <measurementScale>
@@ -785,7 +813,7 @@
           <measurementScale>
             <interval>
               <unit>
-                <standardUnit>dimensionless</standardUnit>
+                <customUnit>see_units_column</customUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
@@ -794,29 +822,56 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>n</attributeName>
-          <attributeDefinition>n</attributeDefinition>
+          <attributeName>target</attributeName>
+          <attributeDefinition>target</attributeDefinition>
+          <measurementScale>
+            <nominal>
+              <nonNumericDomain>
+                <textDomain>
+                  <definition>target</definition>
+                </textDomain>
+              </nonNumericDomain>
+            </nominal>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>value</attributeName>
+          <attributeDefinition>value</attributeDefinition>
           <measurementScale>
             <interval>
               <unit>
-                <standardUnit>dimensionless</standardUnit>
+                <customUnit>see_units_column</customUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
               </numericDomain>
             </interval>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>units</attributeName>
+          <attributeDefinition>units</attributeDefinition>
+          <measurementScale>
+            <nominal>
+              <nonNumericDomain>
+                <textDomain>
+                  <definition>units</definition>
+                </textDomain>
+              </nonNumericDomain>
+            </nominal>
           </measurementScale>
         </attribute>
       </attributeList>
     </dataTable>
     <dataTable>
-      <entityName>products/richness_forecast.csv</entityName>
-      <entityDescription>Forecast of carabid beetle species richness
+      <entityName>beetle-forecast-null_average.csv.gz</entityName>
+      <entityDescription>Forecast of carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps</entityDescription>
-      <physical id="hash://sha256/93e741a4ff044319b3288d71c71d4e95a76039bc3656e252621d3ad49ccc8200">
-        <objectName>richness_forecast.csv</objectName>
-        <size unit="bytes">11008</size>
-        <authentication method="SHA-256">93e741a4ff044319b3288d71c71d4e95a76039bc3656e252621d3ad49ccc8200</authentication>
+      <physical id="hash://sha256/f561ddd8df47c0dce901699f586b1ed58e981ae62a20f04c728b47ae8f1a7cf8">
+        <objectName>beetle-forecast-null_average.csv.gz</objectName>
+        <size unit="bytes">3398216</size>
+        <authentication method="SHA-256">f561ddd8df47c0dce901699f586b1ed58e981ae62a20f04c728b47ae8f1a7cf8</authentication>
+        <compressionMethod>gz</compressionMethod>
         <characterEncoding>UTF-8</characterEncoding>
         <dataFormat>
           <textFormat>
@@ -833,19 +888,6 @@
       </physical>
       <attributeList>
         <attribute>
-          <attributeName>month</attributeName>
-          <attributeDefinition>month</attributeDefinition>
-          <measurementScale>
-            <nominal>
-              <nonNumericDomain>
-                <textDomain>
-                  <definition>month</definition>
-                </textDomain>
-              </nonNumericDomain>
-            </nominal>
-          </measurementScale>
-        </attribute>
-        <attribute>
           <attributeName>siteID</attributeName>
           <attributeDefinition>siteID</attributeDefinition>
           <measurementScale>
@@ -859,40 +901,66 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>mean</attributeName>
-          <attributeDefinition>mean</attributeDefinition>
-          <measurementScale>
-            <interval>
-              <unit>
-                <standardUnit>dimensionless</standardUnit>
-              </unit>
-              <numericDomain>
-                <numberType>real</numberType>
-              </numericDomain>
-            </interval>
-          </measurementScale>
-        </attribute>
-        <attribute>
-          <attributeName>sd</attributeName>
-          <attributeDefinition>sd</attributeDefinition>
-          <measurementScale>
-            <interval>
-              <unit>
-                <standardUnit>dimensionless</standardUnit>
-              </unit>
-              <numericDomain>
-                <numberType>real</numberType>
-              </numericDomain>
-            </interval>
-          </measurementScale>
-        </attribute>
-        <attribute>
           <attributeName>year</attributeName>
           <attributeDefinition>year</attributeDefinition>
           <measurementScale>
             <interval>
               <unit>
-                <standardUnit>dimensionless</standardUnit>
+                <customUnit>see_units_column</customUnit>
+              </unit>
+              <numericDomain>
+                <numberType>real</numberType>
+              </numericDomain>
+            </interval>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>month</attributeName>
+          <attributeDefinition>month</attributeDefinition>
+          <measurementScale>
+            <nominal>
+              <nonNumericDomain>
+                <textDomain>
+                  <definition>month</definition>
+                </textDomain>
+              </nonNumericDomain>
+            </nominal>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>target</attributeName>
+          <attributeDefinition>target</attributeDefinition>
+          <measurementScale>
+            <nominal>
+              <nonNumericDomain>
+                <textDomain>
+                  <definition>target</definition>
+                </textDomain>
+              </nonNumericDomain>
+            </nominal>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>rep</attributeName>
+          <attributeDefinition>rep</attributeDefinition>
+          <measurementScale>
+            <interval>
+              <unit>
+                <customUnit>see_units_column</customUnit>
+              </unit>
+              <numericDomain>
+                <numberType>real</numberType>
+              </numericDomain>
+            </interval>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>value</attributeName>
+          <attributeDefinition>value</attributeDefinition>
+          <measurementScale>
+            <interval>
+              <unit>
+                <customUnit>see_units_column</customUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
@@ -903,4 +971,13 @@
       </attributeList>
     </dataTable>
   </dataset>
+  <additionalMetadata>
+    <metadata>
+      <unitList>
+        <unit id="see_units_column" multiplierToSI="1" name="see_units_column" parentSI="dimensionless" unitType="dimensionless">
+          <description>units are defined in the column labelled 'units'</description>
+        </unit>
+      </unitList>
+    </metadata>
+  </additionalMetadata>
 </eml:eml>

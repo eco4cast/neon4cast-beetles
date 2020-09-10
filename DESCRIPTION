@@ -1,4 +1,5 @@
 Package: compendium
 Version: 0.1.0
-Depends: tidyverse, neonstore, scoringRules, openssl, stringi
-Suggests: vroom, emld, contentid, jsonld, jsonlite
+Imports: tidyverse, neonstore, scoringRules, openssl, stringi, vroom, emld, 
+         contentid, jsonld, jsonlite, aws.s3, prov
+Remotes: cboettig/prov

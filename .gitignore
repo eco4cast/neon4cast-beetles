@@ -7,3 +7,6 @@
 data/*.zip
 cache
 products
+.Renviron
+*.csv.gz
+*.json

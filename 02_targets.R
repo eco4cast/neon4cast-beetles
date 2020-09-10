@@ -22,7 +22,10 @@ richness <- beetles %>%
   select(taxonID, siteID, collectDate, month, year) %>%
   distinct() %>%
   count(siteID, month, year) %>% 
-  rename(value = n)
+  rename(value = n)  %>%
+  mutate(target = "richness",
+         units = "observed_count") %>% 
+  ungroup()
 
 
 
@@ -40,21 +43,26 @@ counts <- sorting %>%
 
 abund <- counts %>% 
   left_join(effort) %>% 
-  mutate(value = count / trapnights) %>% ungroup()
+  mutate(value = count / trapnights,
+         target = "abundance",
+         units = "observed_count_per_trapnight") %>% 
+  select(siteID, month, year, target, value, units) %>%
+  ungroup()
 
-
-## Write files locally
-base <- Sys.getenv("MINIO_HOME", ".")
-richness.csv <- file.path(base, "targets/beetle/richness.csv.gz")
-abund.csv <- file.path(base, "targets/beetle/abund.csv.gz")
-readr::write_csv(richness, richness.csv)
-readr::write_csv(abund, abund.csv)
+targets <- bind_rows(abund, richness)
 
 
 
-## Publish files to the content-store
+##  Write out the targets
+write_csv(targets, "beetle-targets.csv.gz")
+
+## Publish the targets to EFI.  Assumes aws.s3 env vars are configured.
 source("R/publish.R")
-# publish(c(richness.csv, abund.csv))
-# Need a metadata file / prov record
+publish(code = c("02_targets.R", "R/resolve_taxonomy.R"),
+        data_out = "beetle-targets.csv.gz",
+        prefix = "beetle/",
+        bucket = "targets")
+
+
 
 
