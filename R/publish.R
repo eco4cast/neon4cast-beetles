@@ -57,12 +57,15 @@ publish <- function(data_in = NULL,
                     registries = "https://hash-archive.org"){
   
   
+  
   ## get the bucket's provenance record first
   suppressMessages({
+  unlink("prov.json") # keep records distinct
   if(aws.s3::object_exists(paste0(prefix, provdb), bucket = bucket)){
     aws.s3::save_object(paste0(prefix, provdb), bucket = bucket)
   }
   })
+  
   
   prov::write_prov(data_in, code, data_out, meta, 
                    provdb = provdb, append = TRUE)
