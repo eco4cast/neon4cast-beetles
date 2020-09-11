@@ -27,21 +27,31 @@ build_eml <- function(title, abstract, creators, contact_orcid, tables = NULL, c
       coverage = coverage
     ),
     system = "hash-uri",
-    packageId = package_id(tables))
+    packageId = package_id(tables),
+    additionalMetadata = list(
+      metadata = list(
+        unitList = units_column()))
+  )
   
   #emld::as_xml(meta,  output)
   
 }
 
+
+units_column <- function(){
+  list(unit = list(id = "see_units_column",
+                   name = "see_units_column",
+                   unitType = "dimensionless",
+                   parentSI = "dimensionless",
+                   multiplierToSI = "1",
+            description = "units are defined in the column labelled 'units'"))
+}
+
 multihash_id <- function(files){
   ids <- vapply(files, 
-                function(x) paste0(openssl::sha256(file(x))),
+                function(x) paste0("hash://sha256/", openssl::sha256(file(x))),
                 character(1L))
-  
-  hash <- paste0(openssl::sha256(paste(ids, collapse="\n")))
-  paste0("hash://sha256/", hash)
-  
-  hash
+  paste0("hash://sha256/", paste0(openssl::sha256(paste(ids, collapse="\n"))))
 }
 
 package_id <- function(tables){
@@ -111,8 +121,8 @@ attribute_list <- function(file){
 parse_schema <- function(col, 
                          name, 
                          definition = name, 
-                         unit = "dimensionless", 
-                         standard = TRUE){
+                         unit = "see_units_column", 
+                         standard = FALSE){
   type <- strsplit(class(col), "_")[[1]][[2]]
   switch(type,
          "character" = char_att(name, definition),
