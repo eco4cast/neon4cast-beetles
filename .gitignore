@@ -3,7 +3,6 @@
 .RData
 .Ruserdata
 *.Rproj
-*.html
 data/*.zip
 cache
 products

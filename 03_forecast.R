@@ -34,10 +34,9 @@ null_forecast <- function(targets, forecast_year = 2019){
 
 
 ## Get the latest beetle target data.  
-Sys.setenv("AWS_DEFAULT_REGION" = "data",
-           "AWS_S3_ENDPOINT" = "ecoforecast.org")
-targets_file <- aws.s3::save_object("beetle/beetle-targets.csv.gz", bucket = "targets")
-targets <-  read_csv(targets_file)
+download.file("https://data.ecoforecast.org/targets/beetle/beetle-targets.csv.gz",
+              "beetle-targets.csv.gz")
+targets <-  read_csv("beetle-targets.csv.gz")
 
 ## Make the forecast
 forecast <- null_forecast(targets)
