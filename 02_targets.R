@@ -1,6 +1,8 @@
 ## 02_process.R
 ##  Process the raw data into the target variable product
 
+renv::restore()
+
 library(neonstore)
 library(tidyverse)
 source("R/resolve_taxonomy.R")

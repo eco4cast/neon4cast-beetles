@@ -1,3 +1,4 @@
+renv::restore()
 ## 04_score.R
 library(tidyverse)
 library(scoringRules)
