@@ -8,27 +8,39 @@ library(tidyverse)
 ## the raw data, and may include other drivers.  Using only the target
 ## variables for prediction is merely a minimal model.  
 null_forecast <- function(targets, forecast_year = 2019){
-  ## Forecast is just based on historic mean/sd by siteID & month
+  ## Forecast is just based on historic mean/sd by siteID & week
   model <- targets %>% 
     filter(year < forecast_year) %>%
-    group_by(month, siteID, target) %>%
-    summarize(mean = mean(value, na.rm = TRUE),
-              sd = sd(value, na.rm = TRUE)) %>% 
-    mutate(sd = replace_na(sd, mean(sd, na.rm=TRUE))) %>% 
+    group_by(week, siteID) %>%
+    summarize(mean_richness = mean(richness, na.rm = TRUE),
+              sd_richness = sd(richness, na.rm = TRUE),
+              mean_abundance = mean(abundance, na.rm = TRUE),
+              sd_abundance = sd(abundance, na.rm = TRUE)
+              ) %>% 
+    mutate(sd_richness = replace_na(sd_richness, mean(sd_richness, na.rm=TRUE)),
+           sd_abundance = replace_na(sd_abundance, mean(sd_abundance, na.rm=TRUE)),
+          ) %>% 
     mutate(year = forecast_year)
   
   ### Express forecasts in terms of replicates instead of analytic mean, sd.
   ### This allows for scoring using CRPS, and generalizes to MCMC-based forecasts
   
   mcmc_samples <- function(df, n_reps = 500){
-    
     map_dfr(1:nrow(df), 
-            function(i) data.frame(siteID = df$siteID[[i]],
-                                   year = df$year[[i]],
-                                   month = df$month[[i]],
-                                   target = df$target[[i]],
-                                   rep = 1:n_reps, 
-                                   value = rnorm(n_reps, df$mean[[i]], df$sd[[i]])))
+            function(i) 
+              data.frame(siteID = df$siteID[[i]],
+                         year = df$year[[i]],
+                         week = df$week[[i]],
+                         rep = 1:n_reps, 
+                         richness = rnorm(n_reps, 
+                                          df$mean_richness[[i]], 
+                                          df$sd_richness[[i]]),
+                         abundance = rnorm(n_reps,
+                                           df$mean_abundance[[i]],
+                                           df$sd_abundance[[i]])
+                         
+                        )
+            )
   }
   
   n_reps <- 500

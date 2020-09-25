@@ -3,28 +3,48 @@ renv::restore()
 library(tidyverse)
 library(scoringRules)
 
-efi_score <- function(forecasts, targets){
-  crps_score <- function(forecast,
-                         target){
-    
-    ## Teach crps to treat NA observations as NA scores:
-    scoring_fn <- function(y, dat) 
-      tryCatch(scoringRules::crps_sample(y, dat), error = function(e) NA_real_, finally = NA_real_)
-    
-    ## Left-join will keep only the rows for which site,month,year of the target match the predicted
-    left_join(forecast, 
-              rename(target, true = value),
-              by = c("siteID", "month", "year", "target"))  %>% 
-      mutate(id = paste(siteID, year, month, target, sep="-")) %>%
-      group_by(id) %>% 
-      summarise(score = scoring_fn(true[[1]], value))
-  }
+
+## Generic scoring function.
+## Assumes any column that is not named as a variable or reps column
+## should be a grouping variable.  So drop any extraneous columns first!
+## Provide the names of the variables columns and the reps column 
+## (default is 'rep')
+crps_score <- function(forecast, target, 
+                       variables = c("richness", "abundance"),
+                       reps_col = "rep"){
   
-  scores <- lapply(forecasts, crps_score, targets)
+  ## Teach crps to treat NA observations as NA scores:
+  scoring_fn <- function(y, dat) 
+    tryCatch(scoringRules::crps_sample(y, dat), error = function(e) NA_real_, finally = NA_real_)
+  
+  ## Make tables into long format
+  target_long <- target %>% 
+    pivot_longer(all_of(variables), 
+                 names_to = "target", 
+                 values_to = "observed") %>%
+    tidyr::unite("id", -all_of("observed"))
+  
+  forecast_long <- forecast %>% 
+    pivot_longer(all_of(variables), 
+                 names_to = "target", 
+                 values_to = "predicted") %>%
+    unite("id", -all_of(c(reps_col, "predicted")))
+  
+  
+  ## Left-join will keep only the rows for which site,month,year of the target match the predicted
+  left_join(forecast_long, target_long, by = c("id"))  %>% 
+    group_by(id) %>% 
+    summarise(score = scoring_fn(observed[[1]], predicted))
+  
+}
+
+## apply over a full collection (list) of forecasts
+efi_score <- function(forecasts, target, variables = c("richness", "abundance")){
+  scores <- lapply(forecasts, crps_score, target,  variables = variables)
 
 }
 
-
+## here we go:
 
 ## Get the latest beetle target data.  
 Sys.setenv("AWS_DEFAULT_REGION" = "data",
@@ -41,9 +61,11 @@ lapply(keys, aws.s3::save_object, bucket = "forecasts")
 forecast_files <- basename(keys)
 
 ## Read in data and compute scores!
-targets <- read_csv(targets_file)
+target <- read_csv(targets_file)
 forecasts <- lapply(forecast_files, read_csv)
-scores <- efi_score(forecasts, targets)
+
+
+scores <- efi_score(forecasts, target)
 
 ## write out score files
 score_files <- gsub("forecast", "score", forecast_files)
