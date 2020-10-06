@@ -7,11 +7,16 @@ library(neonstore)
 library(tidyverse)
 source("R/resolve_taxonomy.R")
 
+## assumes data have been downloaded and stored with:
+# neon_download("DP1.10022.001")
+# neon_store(product = "DP1.10022.001")
+
+
 ## Load data from raw files
-sorting <- neon_read("bet_sorting", altrep = FALSE)
-para <- neon_read("bet_parataxonomistID", altrep = FALSE)
-expert <- neon_read("bet_expertTaxonomistIDProcessed", altrep = FALSE)
-field <- neon_read("bet_fielddata", altrep = FALSE)
+sorting <- neon_table("bet_sorting")
+para <- neon_table("bet_parataxonomistID")
+expert <- neon_table("bet_expertTaxonomistIDProcessed")
+field <- neon_table("bet_fielddata")
 
 
 #### Generate derived richness table  ####################
@@ -39,7 +44,7 @@ counts <- sorting %>%
   mutate(week = lubridate::week(collectDate),
          year =  lubridate::year(collectDate)) %>%
   group_by(siteID, year, week) %>%
-  summarize(count = sum(individualCount, na.rm = TRUE))
+  summarize(count = sum(as.numeric(individualCount), na.rm = TRUE))
 
 abund <- counts %>% 
   left_join(effort) %>% 
