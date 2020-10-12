@@ -628,27 +628,21 @@
     "neonUtilities": {
       "Package": "neonUtilities",
       "Version": "1.3.7",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "NEON-utilities",
-      "RemoteUsername": "NEONScience",
-      "RemoteRef": "stack-from-store",
-      "RemoteSha": "369bfa808fdfdc4ae6c2b63ac0dccf0f43f89dde",
-      "RemoteSubdir": "neonUtilities",
-      "Hash": "e414bcc566a27a453f7dd51a40755913"
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "cd2c8f6fad7fd056d22a760acbf5407b"
     },
     "neonstore": {
       "Package": "neonstore",
-      "Version": "0.3.0",
+      "Version": "0.3.1",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "neonstore",
       "RemoteUsername": "cboettig",
       "RemoteRef": "HEAD",
-      "RemoteSha": "d564ce672943fdec19626198fb47280c42c88f48",
-      "Hash": "f25de958e2b2a44679a9db1cb5be697c"
+      "RemoteSha": "0bda17c52dac6756c94ea4800d9044619c62cf54",
+      "Hash": "486e5e30be3a9765b98d43c56ce28e62"
     },
     "nlme": {
       "Package": "nlme",
@@ -867,10 +861,10 @@
     },
     "rlang": {
       "Package": "rlang",
-      "Version": "0.4.7",
+      "Version": "0.4.8",
       "Source": "Repository",
       "Repository": "RSPM",
-      "Hash": "c06d2a6887f4b414f8e927afd9ee976a"
+      "Hash": "843a6af51414bce7f8a8e372f11d6cd0"
     },
     "rmarkdown": {
       "Package": "rmarkdown",
