@@ -7,9 +7,11 @@ library(neonstore)
 library(tidyverse)
 source("R/resolve_taxonomy.R")
 
+print(neon_dir())
+
 ## assumes data have been downloaded and stored with:
 # neon_download("DP1.10022.001")
-# neon_store(product = "DP1.10022.001")
+neon_store(product = "DP1.10022.001")
 
 
 ## Load data from raw files
