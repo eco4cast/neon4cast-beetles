@@ -57,7 +57,7 @@ targets <-  read_csv("beetle-targets.csv.gz")
 forecast <- null_forecast(targets)
 
 ## Store the forecast products
-readr::write_csv(forecast, "beetle-forecast-null_average.csv.gz")
+readr::write_csv(forecast, "beetles-2019-EFI_avg_null.csv.gz")
 
 ## Create the metadata record, see metadata.Rmd
 
@@ -66,7 +66,7 @@ readr::write_csv(forecast, "beetle-forecast-null_average.csv.gz")
 source("R/publish.R")
 publish(code = "03_forecast.R",
         data_in = "beetle-targets.csv.gz",
-        data_out = "beetle-forecast-null_average.csv.gz",
+        data_out = "beetles-2019-EFI_avg_null.csv.gz",
         meta = "meta/eml.xml",
         prefix = "beetle/",
         bucket = "forecasts")
