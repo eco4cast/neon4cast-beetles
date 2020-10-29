@@ -1,5 +1,7 @@
 renv::restore()
 
+remotes::install_github("cboettig/neonstore")
+
 library(neonstore)
 library(tidyverse)
 
@@ -14,20 +16,20 @@ start_date <- NA
 
 # Beetle
 # DP1.10022.001
-print("Downloading: DP1.10022.001")
+message("Downloading: DP1.10022.001")
 new_data1 <- neonstore::neon_download(product="DP1.10022.001", type = "expanded", start_date = start_date, .token = Sys.getenv("NEON_TOKEN"))
 
 if(!is.null(new_data1) | run_full_workflow){
   
+  message(paste0("Generating targets at ", Sys.time()))
   source("02_targets.R")
-  
-  print(paste0("Completed Target at ", Sys.time()))
+  message(paste0("Completed targets at ", Sys.time()))
   
   if(generate_null){
     
-    print(paste0("Running daily Null at ", Sys.time()))
+    message(paste0("Running null at ", Sys.time()))
     source("03_forecast.R")
-    
+    message(paste0("Completed null at ", Sys.time()))
   }
 }
 
