@@ -10,6 +10,8 @@ library(tidyverse)
 null_forecast <- function(targets, forecast_year = 2019){
   ## Forecast is just based on historic mean/sd by siteID & week
   model <- targets %>% 
+    mutate(week = lubridate::isoweek(time),
+           year = lubridate::isoyear(time))
     filter(year < forecast_year) %>%
     group_by(week, siteID) %>%
     summarize(mean_richness = mean(richness, na.rm = TRUE),
@@ -29,9 +31,8 @@ null_forecast <- function(targets, forecast_year = 2019){
     map_dfr(1:nrow(df), 
             function(i) 
               data.frame(siteID = df$siteID[[i]],
-                         year = df$year[[i]],
-                         week = df$week[[i]],
-                         rep = 1:n_reps, 
+                         time = paste0(df$year[[i]], "-W", df$week[[i]], "-1"),
+                         ensemble = 1:n_reps, 
                          richness = rnorm(n_reps, 
                                           df$mean_richness[[i]], 
                                           df$sd_richness[[i]]),

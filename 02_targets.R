@@ -24,13 +24,14 @@ field <- neon_table("bet_fielddata")
 #### Generate derived richness table  ####################
 
 beetles <- resolve_taxonomy(sorting, para, expert) %>% 
-  mutate(week = lubridate::week(collectDate),
-         year =  lubridate::year(collectDate))
+  mutate(week = lubridate::isoweek(collectDate),
+         year =  lubridate::isoyear(collectDate),
+         time = paste0(year, "-W", week, "-1"))
 
 richness <- beetles %>%  
-  select(taxonID, siteID, collectDate, week, year) %>%
+  select(taxonID, siteID, collectDate, time) %>%
   distinct() %>%
-  count(siteID, week, year) %>% 
+  count(siteID, time) %>% 
   rename(richness = n)  %>%
   ungroup()
 
@@ -44,15 +45,16 @@ effort <- field %>%
 
 counts <- sorting %>% 
   mutate(week = lubridate::week(collectDate),
-         year =  lubridate::year(collectDate)) %>%
-  group_by(siteID, year, week) %>%
+         year =  lubridate::year(collectDate),
+         time = paste0(year, "-W", week, "-1")) %>%
+  group_by(siteID, time) %>%
   summarize(count = sum(as.numeric(individualCount), na.rm = TRUE))
 
 abund <- counts %>% 
   left_join(effort) %>% 
   arrange(collectDate) %>%
   mutate(abundance = count / trapnights) %>% 
-  select(siteID, week, year, abundance) %>%
+  select(siteID, time, abundance) %>%
   ungroup()
 
 targets <- full_join(abund, richness)
