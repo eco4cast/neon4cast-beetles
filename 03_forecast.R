@@ -79,7 +79,7 @@ readr::write_csv(forecast, "beetles-2020-EFI_avg_null.csv.gz")
 source("R/publish.R")
 publish(code = "03_forecast.R",
         data_in = "beetle-targets.csv.gz",
-        data_out = "beetles-2019-EFI_avg_null.csv.gz",
+        data_out = "beetles-2020-EFI_avg_null.csv.gz",
         meta = "meta/eml.xml",
         prefix = "beetle/",
         bucket = "forecasts")

@@ -5,10 +5,6 @@ library(scoringRules)
 
 
 ## Generic scoring function.
-## Assumes any column that is not named as a variable or reps column
-## should be a grouping variable.  So drop any extraneous columns first!
-## Provide the names of the variables columns and the reps column 
-## (default is 'rep')
 crps_score <- function(forecast, target,
                        grouping_variables = c("siteID", "time"),
                        target_variables = c("richness", "abundance"),
@@ -17,13 +13,8 @@ crps_score <- function(forecast, target,
   ## drop extraneous columns && make grouping vars into chr ids (i.e. not dates)
   variables <- c(grouping_variables, target_variables, reps_col)
   
-  forecast <- forecast %>% 
-    select(any_of(variables)) %>% 
-    mutate(across(any_of(grouping_variables), as.character))
-  
-  target <- target  %>% 
-    select(any_of(variables)) %>% 
-    mutate(across(any_of(grouping_variables), as.character))
+  forecast <- forecast %>% select(any_of(variables))
+  target <- target %>% select(any_of(variables)) 
   
   ## Teach crps to treat any NA observations as NA scores:
   scoring_fn <- function(y, dat) {
@@ -47,7 +38,8 @@ crps_score <- function(forecast, target,
   ## Left-join will keep only the rows for which site,month,year of the target match the predicted
   inner_join(forecast_long, target_long, by = c("id"))  %>% 
     group_by(id) %>% 
-    summarise(score = scoring_fn(observed[[1]], predicted))
+    summarise(score = scoring_fn(observed[[1]], predicted),
+              .groups = "drop")
   
 }
 
@@ -69,7 +61,7 @@ targets_file <- aws.s3::save_object("beetle/beetle-targets.csv.gz",
 ## Get all beetle forecasts
 index <- aws.s3::get_bucket("forecasts")
 keys <- vapply(index, `[[`, "", "Key", USE.NAMES = FALSE)
-keys <- keys[grepl("beetle-forecast", keys)]
+keys <- keys[grepl("beetles.*[.]csv", keys)]
 lapply(keys, aws.s3::save_object, bucket = "forecasts")
 forecast_files <- basename(keys)
 
