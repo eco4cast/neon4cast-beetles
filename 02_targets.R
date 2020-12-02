@@ -5,6 +5,7 @@ renv::restore()
 
 library(neonstore)
 library(tidyverse)
+library(ISOweek)
 source("R/resolve_taxonomy.R")
 
 print(neon_dir())
@@ -22,11 +23,9 @@ field <- neon_table("bet_fielddata")
 
 
 #### Generate derived richness table  ####################
-
 beetles <- resolve_taxonomy(sorting, para, expert) %>% 
-  mutate(week = lubridate::isoweek(collectDate),
-         year =  lubridate::isoyear(collectDate),
-         time = paste0(year, "-W", week, "-1"))
+  mutate(iso_week = ISOweek::ISOweek(collectDate),
+         time = ISOweek::ISOweek2date(paste0(iso_week, "-1")))
 
 richness <- beetles %>%  
   select(taxonID, siteID, collectDate, time) %>%
@@ -40,15 +39,18 @@ richness <- beetles %>%
 #### Generate derived abundance table ####################
 
 effort <- field %>% 
-  group_by(siteID, collectDate) %>% 
-  summarize(trapnights = as.integer(sum(collectDate - setDate)))
+  mutate(iso_week = ISOweek::ISOweek(collectDate),
+         time = ISOweek::ISOweek2date(paste0(iso_week, "-1"))) %>% 
+  group_by(siteID, time) %>% 
+  summarise(trapnights = as.integer(sum(collectDate - setDate)),
+            .groups = "drop")
 
 counts <- sorting %>% 
-  mutate(week = lubridate::week(collectDate),
-         year =  lubridate::year(collectDate),
-         time = paste0(year, "-W", week, "-1")) %>%
+  mutate(iso_week = ISOweek::ISOweek(collectDate),
+         time = ISOweek::ISOweek2date(paste0(iso_week, "-1"))) %>%
   group_by(siteID, time) %>%
-  summarize(count = sum(as.numeric(individualCount), na.rm = TRUE))
+  summarise(count = sum(as.numeric(individualCount), na.rm = TRUE), 
+            .groups = "drop")
 
 abund <- counts %>% 
   left_join(effort) %>% 

@@ -9,38 +9,51 @@ library(scoringRules)
 ## should be a grouping variable.  So drop any extraneous columns first!
 ## Provide the names of the variables columns and the reps column 
 ## (default is 'rep')
-crps_score <- function(forecast, target, 
-                       variables = c("richness", "abundance"),
-                       reps_col = "rep"){
+crps_score <- function(forecast, target,
+                       grouping_variables = c("siteID", "time"),
+                       target_variables = c("richness", "abundance"),
+                       reps_col = "ensemble"){
   
-  ## Teach crps to treat NA observations as NA scores:
-  scoring_fn <- function(y, dat) 
+  ## drop extraneous columns && make grouping vars into chr ids (i.e. not dates)
+  variables <- c(grouping_variables, target_variables, reps_col)
+  
+  forecast <- forecast %>% 
+    select(any_of(variables)) %>% 
+    mutate(across(any_of(grouping_variables), as.character))
+  
+  target <- target  %>% 
+    select(any_of(variables)) %>% 
+    mutate(across(any_of(grouping_variables), as.character))
+  
+  ## Teach crps to treat any NA observations as NA scores:
+  scoring_fn <- function(y, dat) {
     tryCatch(scoringRules::crps_sample(y, dat), error = function(e) NA_real_, finally = NA_real_)
+  }
   
   ## Make tables into long format
   target_long <- target %>% 
-    pivot_longer(all_of(variables), 
+    pivot_longer(any_of(target_variables), 
                  names_to = "target", 
                  values_to = "observed") %>%
     tidyr::unite("id", -all_of("observed"))
   
   forecast_long <- forecast %>% 
-    pivot_longer(all_of(variables), 
+    pivot_longer(any_of(target_variables), 
                  names_to = "target", 
                  values_to = "predicted") %>%
     unite("id", -all_of(c(reps_col, "predicted")))
   
   
   ## Left-join will keep only the rows for which site,month,year of the target match the predicted
-  left_join(forecast_long, target_long, by = c("id"))  %>% 
+  inner_join(forecast_long, target_long, by = c("id"))  %>% 
     group_by(id) %>% 
     summarise(score = scoring_fn(observed[[1]], predicted))
   
 }
 
 ## apply over a full collection (list) of forecasts
-efi_score <- function(forecasts, target, variables = c("richness", "abundance")){
-  scores <- lapply(forecasts, crps_score, target,  variables = variables)
+efi_score <- function(forecasts, target, ...){
+  scores <- lapply(forecasts, crps_score, target,  ...)
 
 }
 
