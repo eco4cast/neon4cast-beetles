@@ -1,7 +1,7 @@
 ## 02_process.R
 ##  Process the raw data into the target variable product
 
-renv::restore()
+#renv::restore()
 
 library(neonstore)
 library(tidyverse)
@@ -54,7 +54,7 @@ counts <- sorting %>%
 
 abund <- counts %>% 
   left_join(effort) %>% 
-  arrange(collectDate) %>%
+  arrange(time) %>%
   mutate(abundance = count / trapnights) %>% 
   select(siteID, time, abundance) %>%
   ungroup()
