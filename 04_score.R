@@ -1,4 +1,4 @@
-renv::restore()
+# renv::restore()
 ## 04_score.R
 library(tidyverse)
 library(scoringRules)
@@ -54,7 +54,7 @@ efi_score <- function(forecasts, target, ...){
 ## Get the latest beetle target data.  
 Sys.setenv("AWS_DEFAULT_REGION" = "data",
            "AWS_S3_ENDPOINT" = "ecoforecast.org")
-targets_file <- aws.s3::save_object("beetle/beetle-targets.csv.gz", 
+targets_file <- aws.s3::save_object("beetles/beetles-targets.csv.gz", 
                                     bucket = "targets")
 
 
@@ -82,7 +82,7 @@ source("R/publish.R")
 publish(code = "04_score.R",
         data_in = c(targets_file, forecast_files),
         data_out = score_files,
-        prefix = "beetle/",
+        prefix = "beetles/",
         bucket = "scores")
 
 

@@ -62,9 +62,9 @@ null_forecast <- function(targets, forecast_year = 2020){
 
 
 ## Get the latest beetle target data.  
-download.file("https://data.ecoforecast.org/targets/beetle/beetle-targets.csv.gz",
-              "beetle-targets.csv.gz")
-targets <-  read_csv("beetle-targets.csv.gz")
+download.file("https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz",
+              "beetles-targets.csv.gz")
+targets <-  read_csv("beetles-targets.csv.gz")
 
 ## Make the forecast
 forecast <- null_forecast(targets)
@@ -78,10 +78,10 @@ readr::write_csv(forecast, "beetles-2020-EFI_avg_null.csv.gz")
 ## Publish the forecast automatically. (EFI-only)
 source("R/publish.R")
 publish(code = "03_forecast.R",
-        data_in = "beetle-targets.csv.gz",
+        data_in = "beetles-targets.csv.gz",
         data_out = "beetles-2020-EFI_avg_null.csv.gz",
         meta = "meta/eml.xml",
-        prefix = "beetle/",
+        prefix = "beetles/",
         bucket = "forecasts")
 
 

@@ -64,13 +64,13 @@ targets <- full_join(abund, richness)
 
 
 ##  Write out the targets
-write_csv(targets, "beetle-targets.csv.gz")
+write_csv(targets, "beetles-targets.csv.gz")
 
 ## Publish the targets to EFI.  Assumes aws.s3 env vars are configured.
 source("R/publish.R")
 publish(code = c("02_targets.R", "R/resolve_taxonomy.R"),
-        data_out = "beetle-targets.csv.gz",
-        prefix = "beetle/",
+        data_out = "beetles-targets.csv.gz",
+        prefix = "beetles/",
         bucket = "targets")
 
 
