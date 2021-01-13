@@ -1,6 +1,7 @@
-renv::restore()
 
-remotes::install_github("cboettig/neonstore")
+devtools::install_deps()
+
+#remotes::install_github("cboettig/neonstore")
 
 library(neonstore)
 library(tidyverse)
