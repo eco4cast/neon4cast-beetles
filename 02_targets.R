@@ -10,6 +10,9 @@ source("R/resolve_taxonomy.R")
 
 print(neon_dir())
 
+Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
+Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
+
 ## assumes data have been downloaded and stored with:
 # neon_download("DP1.10022.001")
 neon_store(product = "DP1.10022.001")
