@@ -1,12 +1,16 @@
-renv::restore()
 
-remotes::install_github("cboettig/neonstore")
+#remotes::install_deps()
+
+#remotes::install_github("cboettig/neonstore")
+
+Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
+Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
 
 library(neonstore)
 library(tidyverse)
 
 
-Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
+
 
 run_full_workflow <- TRUE
 generate_null <- TRUE
