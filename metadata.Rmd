@@ -26,15 +26,32 @@ authors <- list(list(individualName = list(givenName = "Carl", surName = "Boetti
                 list(individualName = list(givenName = "Quinn", surName = "Thomas"))
                 )
 
-tables <- list(
-  list(file = "beetle-targets.csv.gz", 
-       description = "Measured carabid beetle species richness and abundance
-          by siteID and collectDate across all NEON sites operating pitfall traps"),
-  list(file = "beetle-forecast-null_average.csv.gz", 
-       description = "Forecast of carabid beetle species richness and abundance
-          by siteID and collectDate across all NEON sites operating pitfall traps")
-)
 ```
+
+```{r}
+target_file <- "https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz"
+forecast_file <- "https://data.ecoforecast.org/forecasts/beetles/beetles-2020-01-01-EFI_avg_null.csv.gz"
+#download.file(target_file, basename(target_file))
+#download.file(forecast_file, basename(forecast_file))
+
+columns =  data.frame(name = c("siteID", "time", "ensemble", "richness", "abundance"),
+                      type = c("character", "date", "integer", "double", "double"),
+                      description = c("NEON siteID", "ISOweek that traps were collected", "ensemble replicate", "predicted average richness", "predicted average beetles caught per trapnight"),
+                      unit = c(NA, "date", "number", "number", "count/d"))
+
+tables <- list(
+  list(file =  target_file, 
+       description = "Measured carabid beetle species richness and abundance
+          by siteID and collectDate across all NEON sites operating pitfall traps",
+       columns = columns),
+  list(file =  forecast_file, 
+       description = "Forecast of carabid beetle species richness and abundance
+          by siteID and collectDate across all NEON sites operating pitfall traps",
+       columns =  columns[-3])
+)
+
+```
+
 
 
 Pre-compute geographic coverage from NEON EML, and also generate taxonomic coverage.  Parsing thousands of NEON EML is inefficient, we really need only one EML per site, so would be better if we restricted the file list to a YYYY-MM when all sites were sampling. To streamline things, we store the coverage data instead.  (Alternately we could have constructed the geographicCoverage from the NEON API locations endpoint).  Note that NEON EML lists each NEON site as effectively a point location, despite EML being defined as a bounding box.  
@@ -60,10 +77,10 @@ taxonomicCoverage %>% jsonlite::write_json("meta/carabid_taxa.json")
 Load the stored taxonomic and geographic coverage, compute current temporal coverage:
 
 ```{r}
-target <- vroom::vroom("beetle-targets.csv.gz")
-dates <- as.Date(paste(target$year, target$month, "01", sep="-"), format = "%Y-%b-%d")
-startDate <- min(dates)
-endDate <- max(dates) # Or is this the forecast horizon
+
+startDate <- min(target$time)
+endDate <- max(target$time) # Or is this the forecast horizon?
+
 temporalCoverage <- 
               list(rangeOfDates =
                 list(beginDate = list(calendarDate = startDate),
@@ -79,6 +96,53 @@ coverage <- list(geographicCoverage = geographicCoverage,
 ```
 
 
+Additional metadata describes the forecast:
+
+```{r}
+writeLines(
+'
+forecast:
+  timestep: 14 days
+  forecast_horizon: 365 days
+  forecast_issue_time: 2021-01-01
+  forecast_project_id: ce997aa8-effe-4336-8748-00114b969bac
+  forecast_iteration_id: 1
+  metadata_standard_version: 0.3
+  model_description:
+    forecast_model_id: fbbb6174-920e-417f-bd9b-7c0e7f15e51f
+    name: Naive Null average
+    type: empirical
+    repository: https://github.com/eco4cast/neon4cast-beetles
+  initial_conditions:
+    status: absent
+  drivers:
+    status: absent
+  parameters:
+    status: absent
+  random_effects:
+    status: present
+  process_error:
+    status: present
+  obs_error:
+    status: absent
+', "meta/forecast_meta.yml")
+forecast_meta <- yaml::read_yaml("meta/forecast_meta.yml")
+```
+
+
+```{r}
+custom_units = list(unitList = list(unit = list(id = "count/d",
+                   name = "count per day",
+                   unitType = "frequency",
+                   parentSI = "hertz",
+                   multiplierToSI = "1/86400",
+                   description = "Count per day'")))
+# units::as_units("count/day")
+```
+
+
+
+
 Now generate EML. Note that `attributesList` will be computed from the `vroom::spec` of the data files,
 which handles data types reasonably but is fast and loose on units.  Fortunately `dimensionless` is 
 okay for the count data included here. 
@@ -90,11 +154,21 @@ meta <- build_eml(title = "NEON Carabid Species Richness and Abundance Forecast"
           creators = authors, 
           contact_orcid = carl,
           coverage = coverage,
-          tables = tables)
+          tables = tables,
+          forecast_meta  = forecast_meta,
+          custom_units = custom_units)
+```
 
+```{r}
 
 emld::as_xml(meta, "meta/eml.xml")
 emld::eml_validate("meta/eml.xml")
+
+## need to patch EFI standards
+EFIstandards::forecast_validator("meta/eml.xml")
+
+
+
 ```
 
 

@@ -9,12 +9,14 @@ library(emld)
 
 # `tables` is a list(list(file="data.csv", description = "da da da"), list(...))
 build_eml <- function(title, abstract, creators, contact_orcid, tables = NULL, coverage = NULL,
-                      output = "eml.xml"){
+                      forecast_meta = NULL, custom_units = NULL, output = "eml.xml"){
   
   dataTables <- NULL
   if(!is.null(tables))
-    dataTables <- lapply(tables, function(x) build_dataTable(x$file, x$description))
+    dataTables <- lapply(tables, function(x) build_dataTable(x$file, x$description, x$columns))
   
+
+
   meta <- list(
     dataset = list(
       title = title,
@@ -28,9 +30,7 @@ build_eml <- function(title, abstract, creators, contact_orcid, tables = NULL, c
     ),
     system = "hash-uri",
     packageId = package_id(tables),
-    additionalMetadata = list(
-      metadata = list(
-        unitList = units_column()))
+    additionalMetadata = list(metadata = c(custom_units,forecast_meta))
   )
   
   #emld::as_xml(meta,  output)
@@ -61,11 +61,11 @@ package_id <- function(tables){
 
 
 
-build_dataTable <- function(file, description){
+build_dataTable <- function(file, description, columns = NULL){
   list(entityName = file,
        entityDescription = description,
        physical = physical(file),
-       attributeList = attribute_list(file))
+       attributeList = attribute_list(file, columns))
   
   
 }
@@ -73,6 +73,7 @@ build_dataTable <- function(file, description){
 
 ## 
 physical <-  function(file,  url = NULL){
+  
   f <- file
   hash <- paste0(openssl::sha256(file(f)))
   id <- paste0("hash://sha256/", hash)
@@ -105,33 +106,58 @@ physical <-  function(file,  url = NULL){
 }
 
 
-attribute_list <- function(file){
+attribute_list <- function(file, columns = NULL){
   f <- file
-  header <- vroom::vroom(f, n_max = 1)
-  schema <- vroom::spec(header)
-  cols <- schema$cols
   
-  ## HACK! technically we should be defining the units here.
-  attribute = lapply(names(cols), 
-                     function(name) parse_schema(cols[[name]], name))
+  if(is.null(columns)){
+    columns <- list()
+    suppressMessages({
+      header <- vroom::vroom(f, n_max = 1)
+      schema <- vroom::spec(header)
+    })
+    columns <- list(
+      type = vapply(class(schema$cols), function(x) strsplit(x, "_")[[1]][[2]], character(1L) ),
+      name = names(schema$cols),
+      definition = NULL,
+      unit = NULL)
+  }
+  
+  if(is.null(columns$definition)){ 
+    columns$definition <- columns$name
+  }
+  if(is.null(columns$unit)){
+    columns$unit <- rep("dimensionless", length(columns$name))
+  }
+  
+  standard <- vapply(columns$unit, EML::is_standardUnit, logical(1L))
+
+  
+  attribute = lapply(seq_along(columns$name), 
+                     function(i){ 
+                       parse_schema(name = columns$name[[i]],
+                                    type = columns$type[[i]],
+                                    definition = columns$definition[[i]],
+                                    unit = columns$unit[[i]],
+                                    standard = standard[[i]])
+       })
  list(attribute = attribute)
 }
 
 
-parse_schema <- function(col, 
-                         name, 
+parse_schema <- function(name,
+                         type, 
                          definition = name, 
-                         unit = "see_units_column", 
-                         standard = FALSE){
-  type <- strsplit(class(col), "_")[[1]][[2]]
+                         unit = "dimensionless", 
+                         standard = TRUE){
   switch(type,
          "character" = char_att(name, definition),
          "date" = datetime_att(name, definition),
          "double" = numeric_att(name, definition, 
                                 unit = unit, standard = standard),
+         "real" = numeric_att(name, definition, 
+                                unit = unit, standard = standard),
          "integer" = integer_att(name, definition, 
-                                 unit = unit, standard = standard),
-         char(name, definition)
+                                 unit = unit, standard = standard)
          )
 }
 
