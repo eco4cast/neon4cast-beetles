@@ -77,7 +77,7 @@ taxonomicCoverage %>% jsonlite::write_json("meta/carabid_taxa.json")
 Load the stored taxonomic and geographic coverage, compute current temporal coverage:
 
 ```{r}
-
+target <- readr::read_csv(target_file)
 startDate <- min(target$time)
 endDate <- max(target$time) # Or is this the forecast horizon?
 
@@ -131,12 +131,14 @@ forecast_meta <- yaml::read_yaml("meta/forecast_meta.yml")
 
 
 ```{r}
-custom_units = list(unitList = list(unit = list(id = "count/d",
+custom_units <- EML::set_unitList(units = 
+        data.frame(id = "count/d",
                    name = "count per day",
                    unitType = "frequency",
                    parentSI = "hertz",
                    multiplierToSI = "1/86400",
-                   description = "Count per day'")))
+                   description = "Count per day'"),
+        as_metadata = TRUE)
 # units::as_units("count/day")
 ```
 

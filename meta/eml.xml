@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="hash://sha256/0feec451332bc465a03fb15a0351fd34bf896e8221226cdfe6bd812bfa6f5dec" system="hash-uri" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
+<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="hash://sha256/f42d7273e5b946d927823b02d731c64fb0c4a3916a5d1ea9d5cae893d7ad50cb" system="hash-uri" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
   <dataset>
     <title>NEON Carabid Species Richness and Abundance Forecast</title>
     <creator id="http://orcid.org/0000-0002-1642-628X">
@@ -62,7 +62,7 @@
         <surName>Thomas</surName>
       </individualName>
     </creator>
-    <pubDate>2021-03-16</pubDate>
+    <pubDate>2021-03-17</pubDate>
     <abstract>Simple forecast of Carabid beetle species richness and abundance at
                      each month at each NEON site for 2019, based on historical averages.</abstract>
     <intellectualRights>https://creativecommons.org/publicdomain/zero/1.0/legalcode</intellectualRights>
@@ -761,10 +761,10 @@
       <entityName>https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz</entityName>
       <entityDescription>Measured carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps</entityDescription>
-      <physical id="hash://sha256/10baf9b783a194cfdf3f8ddcc64e558f8c96d1a466983d2ddb8a4ffbe785f680">
+      <physical id="hash://sha256/2619bcbd8cb5526902f4f63a03aa71bb95d0bc355532d1c70f3f032b60cdef2c">
         <objectName>beetles-targets.csv.gz</objectName>
         <size unit="bytes">NA</size>
-        <authentication method="SHA-256">10baf9b783a194cfdf3f8ddcc64e558f8c96d1a466983d2ddb8a4ffbe785f680</authentication>
+        <authentication method="SHA-256">2619bcbd8cb5526902f4f63a03aa71bb95d0bc355532d1c70f3f032b60cdef2c</authentication>
         <compressionMethod>gz</compressionMethod>
         <characterEncoding>UTF-8</characterEncoding>
         <dataFormat>
@@ -940,6 +940,15 @@
   </dataset>
   <additionalMetadata>
     <metadata>
+      <unitList>
+        <unit id="count/d" multiplierToSI="1/86400" name="count per day" parentSI="hertz" unitType="frequency">
+          <description>Count per day'</description>
+        </unit>
+      </unitList>
+    </metadata>
+  </additionalMetadata>
+  <additionalMetadata>
+    <metadata>
       <forecast>
         <drivers>
           <status>absent</status>
@@ -972,11 +981,6 @@
         </random_effects>
         <timestep>14 days</timestep>
       </forecast>
-      <unitList>
-        <unit id="count/d" multiplierToSI="1/86400" name="count per day" parentSI="hertz" unitType="frequency">
-          <description>Count per day'</description>
-        </unit>
-      </unitList>
     </metadata>
   </additionalMetadata>
 </eml:eml>

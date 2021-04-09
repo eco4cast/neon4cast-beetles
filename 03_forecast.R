@@ -1,4 +1,59 @@
 
+library(fable)
+library(distributional)
+## Get the latest beetle target data.  
+download.file("https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz",
+              "beetles-targets.csv.gz")
+targets <-  read_csv("beetles-targets.csv.gz")
+targets <- as_tsibble(targets, index = time, key = siteID)
+
+## a single mean per site... obviously silly
+fc_richness <- targets  %>% 
+  model(null = MEAN(richness)) %>%
+  forecast(h = "1 year")
+
+fc_abundance <- targets  %>%
+  model(null = MEAN(abundance)) %>%
+  forecast(h = "1 year")
+
+
+## Format a fable timeseries, fbl_ts, into EFI summary format
+efi_statistic_format <- function(df){
+  ## determine variable name
+  var <- attributes(df)$dist
+  ## Normal distribution: use distribution mean and variance
+  df %>% 
+    mutate(sd = sqrt( variance( .data[[var]] ) ) ) %>%
+    rename(mean = .mean) %>%
+    select(time, siteID, .model, mean, sd) %>%
+    pivot_longer(c(mean, sd), names_to = "statistic", values_to = var)
+}
+
+
+
+efi_ensemble_format <- function(df, ensemble_members = 10) {
+  ## determine variable name
+  var <- attributes(df)$dist
+  n_groups <- nrow(df)
+  ## Normal distribution: use distribution mean and variance
+  suppressWarnings({
+  expand <- df %>% mutate(sample = generate(  .data[[var]], ensemble_members) )
+  })
+  expand %>%
+    unnest(sample) %>% mutate(ensemble = rep(1:ensemble_members, n_groups)) %>%
+    select(time, siteID, ensemble, {{var}} := sample)
+
+}
+
+
+inner_join( efi_format(fc_richness), efi_format(fc_abundance) )
+
+  mutate(sd = variance(abundance)) %>%
+  as_tibble() %>%
+  select(time, siteID, mean = .mean, sd) %>%
+  pivot_longer(c(mean, sd), names_to = "statistic", values_to = "abundance")
+
+fc <- inner_join(fc_richness, fc_abundance)
 # renv::restore()
 
 library(tidyverse)
@@ -69,13 +124,17 @@ targets <-  read_csv("beetles-targets.csv.gz")
 ## Make the forecast
 forecast <- null_forecast(targets)
 
+
 ## Store the forecast products
 readr::write_csv(forecast, "beetles-2020-EFI_avg_null.csv.gz")
 
 ## Create the metadata record, see metadata.Rmd
 
 
-## Publish the forecast automatically. (EFI-only)
+
+## STOP! This last command is for EFI use only!  
+## This bit publishes the null forecast automatically.  For general submissions, see
+## the `submit` function in https://github.com/eco4cast/neon4cast instead.
 source("R/publish.R")
 publish(code = "03_forecast.R",
         data_in = "beetles-targets.csv.gz",
