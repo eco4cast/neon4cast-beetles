@@ -1,5 +1,5 @@
 Package: compendium
 Version: 0.1.0
 Imports: tidyverse, neonstore, scoringRules, openssl, stringi, vroom, emld, 
-         contentid, jsonld, jsonlite, aws.s3, prov, ISOweek
-Remotes: cboettig/prov
+         contentid, jsonld, jsonlite, aws.s3, prov, ISOweek, neon4cast
+Remotes: cboettig/prov, eco4cast/neon4cast

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="hash://sha256/66e74a625426b4aa4805f3df1b6c96f73979f477d3e1d31af3dde200ae107108" system="hash-uri" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
+<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:stmml="http://www.xml-cml.org/schema/stmml-1.2" packageId="hash://sha256/0feec451332bc465a03fb15a0351fd34bf896e8221226cdfe6bd812bfa6f5dec" system="hash-uri" xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 https://eml.ecoinformatics.org/eml-2.2.0/eml.xsd">
   <dataset>
     <title>NEON Carabid Species Richness and Abundance Forecast</title>
     <creator id="http://orcid.org/0000-0002-1642-628X">
@@ -62,7 +62,7 @@
         <surName>Thomas</surName>
       </individualName>
     </creator>
-    <pubDate>2020-09-10</pubDate>
+    <pubDate>2021-03-16</pubDate>
     <abstract>Simple forecast of Carabid beetle species richness and abundance at
                      each month at each NEON site for 2019, based on historical averages.</abstract>
     <intellectualRights>https://creativecommons.org/publicdomain/zero/1.0/legalcode</intellectualRights>
@@ -731,7 +731,7 @@
             <calendarDate>2013-07-01</calendarDate>
           </beginDate>
           <endDate>
-            <calendarDate>2020-06-01</calendarDate>
+            <calendarDate>2020-10-12</calendarDate>
           </endDate>
         </rangeOfDates>
       </temporalCoverage>
@@ -758,13 +758,13 @@
       <references>http://orcid.org/0000-0002-1642-628X</references>
     </contact>
     <dataTable>
-      <entityName>beetle-targets.csv.gz</entityName>
+      <entityName>https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz</entityName>
       <entityDescription>Measured carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps</entityDescription>
-      <physical id="hash://sha256/608ac3fcabf6e1cd7a4ba433e3b6e1f314b0fcf9bec642a45df9677728812843">
-        <objectName>beetle-targets.csv.gz</objectName>
-        <size unit="bytes">131528</size>
-        <authentication method="SHA-256">608ac3fcabf6e1cd7a4ba433e3b6e1f314b0fcf9bec642a45df9677728812843</authentication>
+      <physical id="hash://sha256/10baf9b783a194cfdf3f8ddcc64e558f8c96d1a466983d2ddb8a4ffbe785f680">
+        <objectName>beetles-targets.csv.gz</objectName>
+        <size unit="bytes">NA</size>
+        <authentication method="SHA-256">10baf9b783a194cfdf3f8ddcc64e558f8c96d1a466983d2ddb8a4ffbe785f680</authentication>
         <compressionMethod>gz</compressionMethod>
         <characterEncoding>UTF-8</characterEncoding>
         <dataFormat>
@@ -795,25 +795,35 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>month</attributeName>
-          <attributeDefinition>month</attributeDefinition>
+          <attributeName>time</attributeName>
+          <attributeDefinition>time</attributeDefinition>
           <measurementScale>
-            <nominal>
-              <nonNumericDomain>
-                <textDomain>
-                  <definition>month</definition>
-                </textDomain>
-              </nonNumericDomain>
-            </nominal>
+            <dateTime>
+              <formatString>YYYY-MM-DD</formatString>
+            </dateTime>
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>year</attributeName>
-          <attributeDefinition>year</attributeDefinition>
+          <attributeName>ensemble</attributeName>
+          <attributeDefinition>ensemble</attributeDefinition>
           <measurementScale>
             <interval>
               <unit>
-                <customUnit>see_units_column</customUnit>
+                <standardUnit>number</standardUnit>
+              </unit>
+              <numericDomain>
+                <numberType>integer</numberType>
+              </numericDomain>
+            </interval>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>richness</attributeName>
+          <attributeDefinition>richness</attributeDefinition>
+          <measurementScale>
+            <interval>
+              <unit>
+                <standardUnit>number</standardUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
@@ -822,55 +832,29 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>target</attributeName>
-          <attributeDefinition>target</attributeDefinition>
-          <measurementScale>
-            <nominal>
-              <nonNumericDomain>
-                <textDomain>
-                  <definition>target</definition>
-                </textDomain>
-              </nonNumericDomain>
-            </nominal>
-          </measurementScale>
-        </attribute>
-        <attribute>
-          <attributeName>value</attributeName>
-          <attributeDefinition>value</attributeDefinition>
+          <attributeName>abundance</attributeName>
+          <attributeDefinition>abundance</attributeDefinition>
           <measurementScale>
             <interval>
               <unit>
-                <customUnit>see_units_column</customUnit>
+                <customUnit>count/d</customUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
               </numericDomain>
             </interval>
-          </measurementScale>
-        </attribute>
-        <attribute>
-          <attributeName>units</attributeName>
-          <attributeDefinition>units</attributeDefinition>
-          <measurementScale>
-            <nominal>
-              <nonNumericDomain>
-                <textDomain>
-                  <definition>units</definition>
-                </textDomain>
-              </nonNumericDomain>
-            </nominal>
           </measurementScale>
         </attribute>
       </attributeList>
     </dataTable>
     <dataTable>
-      <entityName>beetle-forecast-null_average.csv.gz</entityName>
+      <entityName>https://data.ecoforecast.org/forecasts/beetles/beetles-2020-01-01-EFI_avg_null.csv.gz</entityName>
       <entityDescription>Forecast of carabid beetle species richness and abundance
           by siteID and collectDate across all NEON sites operating pitfall traps</entityDescription>
-      <physical id="hash://sha256/f561ddd8df47c0dce901699f586b1ed58e981ae62a20f04c728b47ae8f1a7cf8">
-        <objectName>beetle-forecast-null_average.csv.gz</objectName>
-        <size unit="bytes">3398216</size>
-        <authentication method="SHA-256">f561ddd8df47c0dce901699f586b1ed58e981ae62a20f04c728b47ae8f1a7cf8</authentication>
+      <physical id="hash://sha256/a82388f490a180aa8e58ccdeb4617bc4d70be91594e4571a31ee68559a9623db">
+        <objectName>beetles-2020-01-01-EFI_avg_null.csv.gz</objectName>
+        <size unit="bytes">NA</size>
+        <authentication method="SHA-256">a82388f490a180aa8e58ccdeb4617bc4d70be91594e4571a31ee68559a9623db</authentication>
         <compressionMethod>gz</compressionMethod>
         <characterEncoding>UTF-8</characterEncoding>
         <dataFormat>
@@ -901,12 +885,35 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>year</attributeName>
-          <attributeDefinition>year</attributeDefinition>
+          <attributeName>time</attributeName>
+          <attributeDefinition>time</attributeDefinition>
+          <measurementScale>
+            <dateTime>
+              <formatString>YYYY-MM-DD</formatString>
+            </dateTime>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>ensemble</attributeName>
+          <attributeDefinition>ensemble</attributeDefinition>
           <measurementScale>
             <interval>
               <unit>
-                <customUnit>see_units_column</customUnit>
+                <standardUnit>number</standardUnit>
+              </unit>
+              <numericDomain>
+                <numberType>integer</numberType>
+              </numericDomain>
+            </interval>
+          </measurementScale>
+        </attribute>
+        <attribute>
+          <attributeName>richness</attributeName>
+          <attributeDefinition>richness</attributeDefinition>
+          <measurementScale>
+            <interval>
+              <unit>
+                <standardUnit>number</standardUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
@@ -915,52 +922,12 @@
           </measurementScale>
         </attribute>
         <attribute>
-          <attributeName>month</attributeName>
-          <attributeDefinition>month</attributeDefinition>
-          <measurementScale>
-            <nominal>
-              <nonNumericDomain>
-                <textDomain>
-                  <definition>month</definition>
-                </textDomain>
-              </nonNumericDomain>
-            </nominal>
-          </measurementScale>
-        </attribute>
-        <attribute>
-          <attributeName>target</attributeName>
-          <attributeDefinition>target</attributeDefinition>
-          <measurementScale>
-            <nominal>
-              <nonNumericDomain>
-                <textDomain>
-                  <definition>target</definition>
-                </textDomain>
-              </nonNumericDomain>
-            </nominal>
-          </measurementScale>
-        </attribute>
-        <attribute>
-          <attributeName>rep</attributeName>
-          <attributeDefinition>rep</attributeDefinition>
+          <attributeName>abundance</attributeName>
+          <attributeDefinition>abundance</attributeDefinition>
           <measurementScale>
             <interval>
               <unit>
-                <customUnit>see_units_column</customUnit>
-              </unit>
-              <numericDomain>
-                <numberType>real</numberType>
-              </numericDomain>
-            </interval>
-          </measurementScale>
-        </attribute>
-        <attribute>
-          <attributeName>value</attributeName>
-          <attributeDefinition>value</attributeDefinition>
-          <measurementScale>
-            <interval>
-              <unit>
-                <customUnit>see_units_column</customUnit>
+                <customUnit>count/d</customUnit>
               </unit>
               <numericDomain>
                 <numberType>real</numberType>
@@ -973,9 +940,41 @@
   </dataset>
   <additionalMetadata>
     <metadata>
+      <forecast>
+        <drivers>
+          <status>absent</status>
+        </drivers>
+        <forecast_horizon>365 days</forecast_horizon>
+        <forecast_issue_time>2021-01-01</forecast_issue_time>
+        <forecast_iteration_id>1</forecast_iteration_id>
+        <forecast_project_id>ce997aa8-effe-4336-8748-00114b969bac</forecast_project_id>
+        <initial_conditions>
+          <status>absent</status>
+        </initial_conditions>
+        <metadata_standard_version>0.3</metadata_standard_version>
+        <model_description>
+          <forecast_model_id>fbbb6174-920e-417f-bd9b-7c0e7f15e51f</forecast_model_id>
+          <name>Naive Null average</name>
+          <repository>https://github.com/eco4cast/neon4cast-beetles</repository>
+          <type>empirical</type>
+        </model_description>
+        <obs_error>
+          <status>absent</status>
+        </obs_error>
+        <parameters>
+          <status>absent</status>
+        </parameters>
+        <process_error>
+          <status>present</status>
+        </process_error>
+        <random_effects>
+          <status>present</status>
+        </random_effects>
+        <timestep>14 days</timestep>
+      </forecast>
       <unitList>
-        <unit id="see_units_column" multiplierToSI="1" name="see_units_column" parentSI="dimensionless" unitType="dimensionless">
-          <description>units are defined in the column labelled 'units'</description>
+        <unit id="count/d" multiplierToSI="1/86400" name="count per day" parentSI="hertz" unitType="frequency">
+          <description>Count per day'</description>
         </unit>
       </unitList>
     </metadata>

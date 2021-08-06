@@ -1,0 +1,26 @@
+
+forecast:
+  timestep: 14 days
+  forecast_horizon: 365 days
+  forecast_issue_time: 2021-01-01
+  forecast_project_id: ce997aa8-effe-4336-8748-00114b969bac
+  forecast_iteration_id: 1
+  metadata_standard_version: 0.3
+  model_description:
+    forecast_model_id: fbbb6174-920e-417f-bd9b-7c0e7f15e51f
+    name: Naive Null average
+    type: empirical
+    repository: https://github.com/eco4cast/neon4cast-beetles
+  initial_conditions:
+    status: absent
+  drivers:
+    status: absent
+  parameters:
+    status: absent
+  random_effects:
+    status: present
+  process_error:
+    status: present
+  obs_error:
+    status: absent
+
