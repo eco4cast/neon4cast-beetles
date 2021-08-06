@@ -76,13 +76,14 @@ readr::write_csv(forecast, "beetles-2020-EFI_avg_null.csv.gz")
 
 
 ## Publish the forecast automatically. (EFI-only)
-source("R/publish.R")
+source("../neon4cast-shared-utilities/publish.R")
 publish(code = "03_forecast.R",
         data_in = "beetles-targets.csv.gz",
         data_out = "beetles-2020-EFI_avg_null.csv.gz",
         meta = "meta/eml.xml",
         prefix = "beetles/",
-        bucket = "forecasts")
+        bucket = "forecasts",
+        registries = "https://hash-archive.carlboettiger.info")
 
 
 

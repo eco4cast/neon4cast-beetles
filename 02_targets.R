@@ -2,6 +2,8 @@
 ##  Process the raw data into the target variable product
 
 #renv::restore()
+Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
+Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
 
 library(neonstore)
 library(tidyverse)
@@ -10,12 +12,11 @@ source("R/resolve_taxonomy.R")
 
 print(neon_dir())
 
-Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
-Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
+
 
 ## assumes data have been downloaded and stored with:
 # neon_download("DP1.10022.001")
-neon_store(product = "DP1.10022.001")
+#neon_store(product = "DP1.10022.001")
 
 
 ## Load data from raw files
@@ -70,11 +71,12 @@ targets <- full_join(abund, richness)
 write_csv(targets, "beetles-targets.csv.gz")
 
 ## Publish the targets to EFI.  Assumes aws.s3 env vars are configured.
-source("R/publish.R")
+source("../neon4cast-shared-utilities/publish.R")
 publish(code = c("02_targets.R", "R/resolve_taxonomy.R"),
         data_out = "beetles-targets.csv.gz",
         prefix = "beetles/",
-        bucket = "targets")
+        bucket = "targets",
+        registries = "https://hash-archive.carlboettiger.info")
 
 
 
