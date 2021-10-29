@@ -15,7 +15,7 @@ print(neon_dir())
 
 
 ## assumes data have been downloaded and stored with:
-# neon_download("DP1.10022.001")
+# neon_download("DP1.10022.001", type = "expanded")
 # neon_store(product = "DP1.10022.001")
 
 
