@@ -67,8 +67,15 @@ abund <- counts %>%
   select(siteID, time, abundance) %>%
   ungroup()
 
-targets <- full_join(abund, richness)
+targets_na <- full_join(abund, richness)
 
+## site-dates that have sampling effort but no counts should be
+## treated as explicit observed 0s
+
+targets <- effort %>%
+  select(siteID, time) %>%
+  left_join(targets_na) %>%
+  tidyr::replace_na(list(richness = 0L, abundance = 0))
 
 ##  Write out the targets
 write_csv(targets, "beetles-targets.csv.gz")
