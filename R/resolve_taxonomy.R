@@ -1,29 +1,29 @@
 
 # Update `scientificName`, `taxonID`, `taxonRank` and `morphospeciesID` using assignments from parataxonomy and expert taxonomy.
-# 
+#
 library(dplyr)
 library(stringi)
 
-clean_names <- function (x) 
+clean_names <- function (x)
 {
   s <- stringi::stri_split_regex(x, "/", simplify = TRUE)[,1]
   s <- stringi::stri_extract_all_words(s, simplify = TRUE)
-  if (dim(s)[2] > 1) 
+  if (dim(s)[2] > 1)
     stringi::stri_trim(paste(s[, 1], s[, 2]))
   else stringi::stri_trim(s[, 1])
 }
 
 resolve_taxonomy <- function(sorting, para, expert){
-  
+
   taxonomy <-
-    left_join(sorting, 
-              select(para, subsampleID, individualID, scientificName, taxonRank, taxonID, morphospeciesID), 
-              by = "subsampleID")  %>% 
+    left_join(sorting,
+              select(para, subsampleID, individualID, scientificName, taxonRank, taxonID, morphospeciesID),
+              by = "subsampleID")  %>%
     ## why are there so many other shared columns (siteID, collectDate, etc?  and why don't they match!?)
     ## we use `select` to avoid these
     left_join(
       select(expert, -uid, -namedLocation, -domainID, -siteID, -collectDate, -plotID, -setDate, -collectDate),
-      by = "individualID") %>% 
+      by = "individualID") %>%
     distinct() %>%
      ## Prefer the para table cols over the sorting table cols only for sampleType=="other carabid"
     mutate(taxonRank.x = ifelse(is.na(taxonRank.y) | sampleType != "other carabid", taxonRank.x, taxonRank.y),
@@ -38,31 +38,30 @@ resolve_taxonomy <- function(sorting, para, expert){
            nativeStatusCode = ifelse(is.na(nativeStatusCode.y), nativeStatusCode.x, nativeStatusCode.y),
            sampleCondition = ifelse(is.na(sampleCondition.y), sampleCondition.x, sampleCondition.y)
            ) %>%
-    select(-ends_with(".x"), -ends_with(".y")) %>%
-    select(-individualCount)  
-     ## individualCount could now be misleading, because it is tied to subsampleID, but subsampleID is repeated for each individualID
-     ## Most of the time, the subsample all share the same expert ID, but not always.
-     ## In cases where the subsample is split into separate taxa by experts, the "individualCount must also be split.
-     ## There is no certain way to split the part of the sub-sample that was not pinned.  
-     ## For computing richness alone, we do not need individualCounts anyway.
-  
-  
+    select(-ends_with(".x"), -ends_with(".y")) # %>%
+#    select(-individualCount)
+     ## WARNING: if the subsample is split into separate taxa by experts, we do not know
+     ## how many of the total count should go to each taxon in the the split
+     ## since only part of that subsample have been pinned.
+     ## We should flag these cases in some manner.
+
+
   #### Should we add a "species" column, using morphospecies or the best available?
   ## Use morphospecies if available for higher-rank-only classifications,
   ## Otherwise, binomialize the scientific name:
-  taxonomy <- taxonomy %>% 
-    mutate(morphospecies = 
-             ifelse(taxonRank %in% c("subgenus", "genus", "family", "order") & !is.na(morphospeciesID), 
+  taxonomy <- taxonomy %>%
+    mutate(morphospecies =
+             ifelse(taxonRank %in% c("subgenus", "genus", "family", "order") & !is.na(morphospeciesID),
                     morphospeciesID,
                     clean_names(scientificName)
              )
     )
-  
+
   ## Beetles must be identified as carabids by both sorting table and the taxonomists (~3 non-Carabidae slip through in sorting)
-  beetles <- taxonomy %>% 
+  beetles <- taxonomy %>%
     filter(grepl("carabid", sampleType)) %>%
     filter(family == "Carabidae" | is.na(family))
-  
+
   beetles
 }
-  
+
