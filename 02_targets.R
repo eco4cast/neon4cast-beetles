@@ -88,7 +88,7 @@ publish(code = c("02_targets.R", "R/resolve_taxonomy.R"),
         data_out = "beetles-targets.csv.gz",
         prefix = "beetles/",
         bucket = "targets",
-        provdb = "beetles-targets.tsv",
+        provdb = "beetles-targets-prov.tsv",
         registries = "https://hash-archive.carlboettiger.info")
 
 
