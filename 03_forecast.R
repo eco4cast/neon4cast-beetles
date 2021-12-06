@@ -131,17 +131,15 @@ readr::write_csv(forecast, "beetles-2020-EFI_avg_null.csv.gz")
 ## Create the metadata record, see metadata.Rmd
 
 
-
-## STOP! This last command is for EFI use only!  
-## This bit publishes the null forecast automatically.  For general submissions, see
-## the `submit` function in https://github.com/eco4cast/neon4cast instead.
-source("R/publish.R")
+## Publish the forecast automatically. (EFI-only)
+source("../neon4cast-shared-utilities/publish.R")
 publish(code = "03_forecast.R",
         data_in = "beetles-targets.csv.gz",
         data_out = "beetles-2020-EFI_avg_null.csv.gz",
         meta = "meta/eml.xml",
         prefix = "beetles/",
-        bucket = "forecasts")
+        bucket = "forecasts",
+        registries = "https://hash-archive.carlboettiger.info")
 
 
 
