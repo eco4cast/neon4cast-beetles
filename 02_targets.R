@@ -2,8 +2,8 @@
 ##  Process the raw data into the target variable product
 
 #renv::restore()
-Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
-Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
+#Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
+#Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
 
 library(neonstore)
 library(tidyverse)
@@ -16,7 +16,7 @@ print(neon_dir())
 
 ## assumes data have been downloaded and stored with:
 # neon_download("DP1.10022.001", type = "expanded")
-# neon_store(product = "DP1.10022.001")
+# neon_store(product = "DP1.10022.001", type = "expanded")
 
 
 ## Load data from raw files
@@ -43,7 +43,7 @@ richness <- beetles %>%
 
 #### Generate derived abundance table ####################
 
-## Does not reflect taxonomic corrections!
+## Using 'field' instead of 'beetles' Does not reflect taxonomic corrections!
 ## Allows for some counts even when richness is NA
 
 effort <- field %>%
@@ -71,6 +71,8 @@ targets_na <- full_join(abund, richness)
 
 ## site-dates that have sampling effort but no counts should be
 ## treated as explicit observed 0s
+
+## FIXME some may have effort but no sorting due only to latency, should not be treated as zeros
 
 targets <- effort %>%
   select(siteID, time) %>%
