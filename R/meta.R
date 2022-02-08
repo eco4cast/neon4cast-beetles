@@ -30,7 +30,8 @@ build_eml <- function(title, abstract, creators, contact_orcid, tables = NULL, c
     ),
     system = "hash-uri",
     packageId = package_id(tables),
-    additionalMetadata = list(metadata = c(custom_units,forecast_meta))
+    additionalMetadata = list(custom_units,
+                              list(metadata = forecast_meta))
   )
   
   #emld::as_xml(meta,  output)
