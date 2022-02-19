@@ -2,8 +2,8 @@
 ##  Process the raw data into the target variable product
 
 #renv::restore()
-#Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
-#Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
+Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
+Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
 
 library(neonstore)
 library(tidyverse)
@@ -12,11 +12,12 @@ source("R/resolve_taxonomy.R")
 
 print(neon_dir())
 
-
-
-## assumes data have been downloaded and stored with:
-# neon_download("DP1.10022.001", type = "expanded")
-# neon_store(product = "DP1.10022.001", type = "expanded")
+message("Downloading: DP1.10022.001")
+neonstore::neon_download(product="DP1.10022.001", 
+                         type = "expanded", 
+                         start_date = NA,
+                         .token = Sys.getenv("NEON_TOKEN"))
+neon_store(product = "DP1.10022.001")
 
 
 ## Load data from raw files
