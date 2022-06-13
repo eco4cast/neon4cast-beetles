@@ -84,7 +84,7 @@ targets <- effort %>%
 write_csv(targets, "beetles-targets.csv.gz")
 
 ## Publish the targets to EFI.  Assumes aws.s3 env vars are configured.
-source("../neon4cast-shared-utilities/publish.R")
+source("../challenge-ci/R/publish.R")
 publish(code = c("02_targets.R", "R/resolve_taxonomy.R"),
         data_out = "beetles-targets.csv.gz",
         prefix = "beetles/",

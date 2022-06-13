@@ -1,6 +1,7 @@
 
 library(fable)
 library(distributional)
+library(tidyverse)
 ## Get the latest beetle target data.  
 download.file("https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz",
               "beetles-targets.csv.gz")
@@ -119,27 +120,23 @@ null_forecast <- function(targets, forecast_year = 2020){
 ## Get the latest beetle target data.  
 download.file("https://data.ecoforecast.org/targets/beetles/beetles-targets.csv.gz",
               "beetles-targets.csv.gz")
-targets <-  read_csv("beetles-targets.csv.gz")
+targets <-  readr::read_csv("beetles-targets.csv.gz")
 
 ## Make the forecast
 forecast <- null_forecast(targets)
 
 
-## Store the forecast products
-readr::write_csv(forecast, "beetles-2020-EFI_avg_null.csv.gz")
-
 ## Create the metadata record, see metadata.Rmd
+theme_name <- "beetles"
+time <- as.character(min(forecast$time))
+team_name <- "EFInull"
+filename <- paste0(theme_name, "-", time, "-", team_name, ".csv.gz")
 
+## Store the forecast products
+readr::write_csv(forecast, filename)
 
-## Publish the forecast automatically. (EFI-only)
-source("../neon4cast-shared-utilities/publish.R")
-publish(code = "03_forecast.R",
-        data_in = "beetles-targets.csv.gz",
-        data_out = "beetles-2020-EFI_avg_null.csv.gz",
-        meta = "meta/eml.xml",
-        prefix = "beetles/",
-        bucket = "forecasts",
-        registries = "https://hash-archive.carlboettiger.info")
-
+neon4cast::submit(forecast_file = filename, 
+                  metadata = "meta/eml.xml", 
+                  ask = FALSE)
 
 
