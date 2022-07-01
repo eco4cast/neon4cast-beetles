@@ -2,8 +2,8 @@
 ##  Process the raw data into the target variable product
 
 #renv::restore()
-Sys.setenv("NEONSTORE_HOME" = "/efi_neon_challenge/neonstore")
-Sys.setenv("NEONSTORE_DB" = "/efi_neon_challenge/neonstore")
+Sys.setenv("NEONSTORE_HOME" = "/home/rstudio/data/neonstore")
+Sys.setenv("NEONSTORE_DB" = "/home/rstudio/data/neonstore")
 
 library(neonstore)
 library(tidyverse)

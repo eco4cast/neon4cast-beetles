@@ -70,7 +70,7 @@ readr::write_csv(forecast, filename)
 ## STOP! This last command is for EFI use only!  
 ## This bit publishes the null forecast automatically.  For general submissions, see
 ## the `submit` function in https://github.com/eco4cast/neon4cast instead.
-source("R/publish.R")
+source("../challenge-ci/R/publish.R")
 publish(code = "03_forecast.R",
         data_in = "beetles-targets.csv.gz",
         data_out = "beetles-2020-EFI_avg_null.csv.gz",
