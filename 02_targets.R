@@ -3,7 +3,8 @@
 
 #renv::restore()
 Sys.setenv("NEONSTORE_HOME" = "/home/rstudio/data/neonstore")
-Sys.setenv("NEONSTORE_DB" = "/home/rstudio/data/neonstore")
+#Sys.setenv("NEONSTORE_DB" = "/home/rstudio/data/neonstore")
+#Sys.setenv("NEONSTORE_DB")
 
 library(neonstore)
 library(tidyverse)
@@ -12,12 +13,12 @@ source("R/resolve_taxonomy.R")
 
 print(neon_dir())
 
-message("Downloading: DP1.10022.001")
-neonstore::neon_download(product="DP1.10022.001", 
-                         type = "expanded", 
-                         start_date = NA,
-                         .token = Sys.getenv("NEON_TOKEN"))
-neon_store(product = "DP1.10022.001")
+#message("Downloading: DP1.10022.001")
+#neonstore::neon_download(product="DP1.10022.001", 
+#                         type = "expanded", 
+#                         start_date = NA,
+#                         .token = Sys.getenv("NEON_TOKEN"))
+#neon_store(product = "DP1.10022.001")
 
 
 ## Load data from raw files
@@ -88,7 +89,7 @@ source("../challenge-ci/R/publish.R")
 publish(code = c("02_targets.R", "R/resolve_taxonomy.R"),
         data_out = "beetles-targets.csv.gz",
         prefix = "beetles/",
-        bucket = "targets",
+        bucket = "neon4cast-targets",
         provdb = "beetles-targets-prov.tsv",
         registries = "https://hash-archive.carlboettiger.info")
 

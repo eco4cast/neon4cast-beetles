@@ -76,7 +76,7 @@ publish(code = "03_forecast.R",
         data_out = "beetles-2020-EFI_avg_null.csv.gz",
         meta = "meta/eml.xml",
         prefix = "beetles/",
-        bucket = "forecasts")
+        bucket = "neon4cast-forecasts")
 
 
 
