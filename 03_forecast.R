@@ -8,14 +8,32 @@ library(tidyverse)
 download.file("https://data.ecoforecast.org/neon4cast-targets/beetles/beetles-targets.csv.gz",
               "beetles-targets.csv.gz")
 targets <-  read_csv("beetles-targets.csv.gz")
-targets <- as_tsibble(targets, index = time, key = siteID)
+
+jan1 <- paste0(lubridate::year(Sys.Date()),"-01-01")
+first.day <- lubridate::isoweek(jan1)
+week <- lubridate::isoweek(Sys.Date())
+curr_date <- as.Date(jan1) + week*7 - first.day
+
+lubridate::as_date("2022-01-01") + lubridate::weeks(lubridate::week(Sys.Date()))
+
+targets_richness <- targets |> 
+  filter(variable == "richness") |> 
+  rename(richness = observed) |> 
+  select(-variable) |> 
+  as_tsibble(index = time, key = site_id)
+
+targets_abundance <- targets |> 
+  filter(variable == "abundance") |> 
+  rename(abundance = observed) |> 
+  select(-variable) |> 
+  as_tsibble(index = time, key = site_id)
 
 ## a single mean per site... obviously silly
-fc_richness <- targets  %>% 
+fc_richness <- targets_richness  %>% 
   model(null = MEAN(richness)) %>%
   forecast(h = "1 year")
 
-fc_abundance <- targets  %>%
+fc_abundance <- targets_abundance  %>%
   model(null = MEAN(abundance)) %>%
   forecast(h = "1 year")
 
@@ -27,22 +45,27 @@ efi_statistic_format <- function(df){
   df %>% 
     dplyr::mutate(sd = sqrt( distributional::variance( .data[[var]] ) ) ) %>%
     dplyr::rename(mean = .mean) %>%
-    dplyr::select(time, site_id = siteID, .model, mean, sd) %>%
-    tidyr::pivot_longer(c(mean, sd), names_to = "statistic", values_to = var) %>%
-    pivot_longer(tidyselect::all_of(var), names_to="variable", values_to = "predicted")
+    dplyr::select(time, site_id, .model, mean, sd) %>%
+    tidyr::pivot_longer(c(mean, sd), names_to = "parameter", values_to = var) %>%
+    pivot_longer(tidyselect::all_of(var), names_to="variable", values_to = "predicted") |> 
+    mutate(family = "norm")
 }
 
+fc_richness |> 
+  filter(site_id == "BARR") |> 
+autoplot()
 
 efi_richness <- efi_statistic_format(fc_richness)
 efi_abundance <-  efi_statistic_format(fc_abundance)
-forecast <- bind_rows(efi_richness, efi_abundance)  
+forecast <- bind_rows(efi_richness, efi_abundance) |> 
+  select(time, site_id, family, parameter, variable, predicted)
 
 
 
 ## Create the metadata record, see metadata.Rmd
 theme_name <- "beetles"
-time <- as.character(min(forecast$time))
-team_name <- "EFInull"
+time <- min(forecast$time)
+team_name <- "mean"
 filename <- paste0(theme_name, "-", time, "-", team_name, ".csv.gz")
 
 ## Store the forecast products
