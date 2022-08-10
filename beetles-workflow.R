@@ -21,7 +21,7 @@ start_date <- NA
   if(generate_null){
     
     message(paste0("Running null at ", Sys.time()))
-    #source("03_forecast.R")
+    source("03_forecast.R")
     message(paste0("Completed null at ", Sys.time()))
   }
 

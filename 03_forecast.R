@@ -9,21 +9,31 @@ download.file("https://data.ecoforecast.org/neon4cast-targets/beetles/beetles-ta
               "beetles-targets.csv.gz")
 targets <-  read_csv("beetles-targets.csv.gz")
 
-jan1 <- paste0(lubridate::year(Sys.Date()),"-01-01")
-first.day <- lubridate::isoweek(jan1)
-week <- lubridate::isoweek(Sys.Date())
-curr_date <- as.Date(jan1) + week*7 - first.day
+curr_date <- MMWRweek::MMWRweek2Date(MMWRyear = lubridate::year(Sys.Date()), MMWRweek = lubridate::isoweek(Sys.Date()))
 
-lubridate::as_date("2022-01-01") + lubridate::weeks(lubridate::week(Sys.Date()))
+site_list <- unique(targets$site_id)
+
+last_day_richness <- tibble(site_id = site_list,
+                   time = rep(curr_date, length(site_list)),
+                   variable = "richness",
+                   observed = NA)
+
+last_day_abundance <- tibble(site_id = site_list,
+                            time = rep(curr_date, length(site_list)),
+                            variable = "abundance",
+                            observed = NA)
+
 
 targets_richness <- targets |> 
   filter(variable == "richness") |> 
+  bind_rows(last_day_richness) |> 
   rename(richness = observed) |> 
   select(-variable) |> 
   as_tsibble(index = time, key = site_id)
 
 targets_abundance <- targets |> 
   filter(variable == "abundance") |> 
+  bind_rows(last_day_abundance) |> 
   rename(abundance = observed) |> 
   select(-variable) |> 
   as_tsibble(index = time, key = site_id)
