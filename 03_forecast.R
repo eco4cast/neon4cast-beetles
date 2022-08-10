@@ -9,7 +9,9 @@ download.file("https://data.ecoforecast.org/neon4cast-targets/beetles/beetles-ta
               "beetles-targets.csv.gz")
 targets <-  read_csv("beetles-targets.csv.gz")
 
-curr_date <- MMWRweek::MMWRweek2Date(MMWRyear = lubridate::year(Sys.Date()), MMWRweek = lubridate::isoweek(Sys.Date()))
+curr_iso_week <- ISOweek::ISOweek(Sys.Date())
+
+curr_date <- ISOweek::ISOweek2date(paste0(curr_iso_week, "-1"))
 
 site_list <- unique(targets$site_id)
 
@@ -69,8 +71,6 @@ efi_richness <- efi_statistic_format(fc_richness)
 efi_abundance <-  efi_statistic_format(fc_abundance)
 forecast <- bind_rows(efi_richness, efi_abundance) |> 
   select(time, site_id, family, parameter, variable, predicted)
-
-
 
 ## Create the metadata record, see metadata.Rmd
 theme_name <- "beetles"
