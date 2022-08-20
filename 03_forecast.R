@@ -55,12 +55,12 @@ efi_statistic_format <- function(df){
   var <- attributes(df)$dist
   ## Normal distribution: use distribution mean and variance
   df %>% 
-    dplyr::mutate(sd = sqrt( distributional::variance( .data[[var]] ) ) ) %>%
-    dplyr::rename(mean = .mean) %>%
+    dplyr::mutate(sigma = sqrt( distributional::variance( .data[[var]] ) ) ) %>%
+    dplyr::rename(mu = .mean) %>%
     dplyr::select(time, site_id, .model, mean, sd) %>%
     tidyr::pivot_longer(c(mean, sd), names_to = "parameter", values_to = var) %>%
     pivot_longer(tidyselect::all_of(var), names_to="variable", values_to = "predicted") |> 
-    mutate(family = "norm")
+    mutate(family = "normal")
 }
 
 fc_richness |> 
@@ -70,7 +70,8 @@ autoplot()
 efi_richness <- efi_statistic_format(fc_richness)
 efi_abundance <-  efi_statistic_format(fc_abundance)
 forecast <- bind_rows(efi_richness, efi_abundance) |> 
-  select(time, site_id, family, parameter, variable, predicted)
+  mutate(start_time = lubridate::as_date(min(time)) - lubridate::weeks(1)) |> 
+  select(time, start_time, site_id, family, parameter, variable, predicted)
 
 ## Create the metadata record, see metadata.Rmd
 theme_name <- "beetles"

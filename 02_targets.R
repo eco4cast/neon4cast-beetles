@@ -82,7 +82,8 @@ targets <- effort %>%
   tidyr::replace_na(list(richness = 0L, abundance = 0)) |> 
   pivot_longer(-c("time","siteID"), names_to = "variable", values_to = "observed") |> 
   rename(site_id = siteID) |> 
-  select(time, site_id, variable, observed)
+  mutate(iso_week = ISOweek::ISOweek(time)) |> 
+  select(time, site_id, variable, observed, iso_week)
 
 ##  Write out the targets
 write_csv(targets, "beetles-targets.csv.gz")
